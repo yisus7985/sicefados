@@ -14,19 +14,18 @@ class PeopleTableSeeder extends Seeder
     {
         $population_group = PopulationGroup::firstOrCreate(['name' => 'Ninguna']);
         $eps = EPS::firstOrCreate(['name' => 'No registrada']);
-        $pension_entity = PensionEntity::firstOrCreate(['name' => 'Ninguna']);
+        $pension_entity = PensionEntity::firstOrCreate(['name' => 'No registra']);
 
-        Person::firstOrCreate(
-            ['document_number' => '1075793788'], // Condición para buscar
-            [                                   // Valores a crear si no existe
+        Person::firstOrCreate(['document_number' => '1075793788'], [                                   // Valores a crear si no existe
                 'document_type' => 'Cedula Ciudadania',
-                'first_name' => 'Yeison',
-                'first_last_name' => 'Marin',
-                'second_name' => 'Duran',
+                'first_name' => 'YEISON',
+                'first_last_name' => 'MARIN',
+                'second_name' => 'DURAN',
                 'eps_id' => $eps->id,
                 'population_group_id' => $population_group->id,
                 'pension_entity_id' => $pension_entity->id,
             ]
         );
+      
     }
 }

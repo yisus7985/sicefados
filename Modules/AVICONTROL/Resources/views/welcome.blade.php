@@ -1,4 +1,4 @@
-@extends('avicontrol::layouts.master')
+@extends('avicontrol::layouts.masteroperator')
 
 
 

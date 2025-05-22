@@ -8,9 +8,9 @@ class AppTableSeeder extends Seeder
 {
     public function run()
     {
-        $app = App::updateOrCreate(
-            ['url' => '/AVICONTROL/index'],
+        $app = App::updateOrCreate(['name' => 'AVICON'],
             [
+                'url' => '/avicontrol/index', // URL de la aplicación
                 'name' => 'AVICONTROL', // Agrega un nombre significativo
                 'color' => '#FF5733',
                 'icon' => 'fas fa-feather-alt',

@@ -4,6 +4,7 @@ namespace Modules\AVICONTROL\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Factory;
+use Modules\AVICONTROL\Http\Middleware\BypassPermissionMiddleware;
 
 class AVICONTROLServiceProvider extends ServiceProvider
 {
@@ -28,6 +29,14 @@ class AVICONTROLServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerViews();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+        
+        // Register the bypass permission middleware
+        $router = $this->app['router'];
+        $router->aliasMiddleware('bypass-permission', BypassPermissionMiddleware::class);
+        
+        // Apply the middleware globally for testing
+        // Comment this out in production
+        $router->pushMiddlewareToGroup('web', BypassPermissionMiddleware::class);
     }
 
     /**

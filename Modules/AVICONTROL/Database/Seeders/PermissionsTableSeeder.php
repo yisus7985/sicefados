@@ -1,0 +1,264 @@
+<?php
+
+namespace Modules\AVICONTROL\Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Modules\SICA\Entities\App;
+use Modules\SICA\Entities\Permission;
+use Modules\SICA\Entities\Role;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class PermissionsTableSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        try {
+            // Define permission arrays to be assigned to roles
+            $permissions_admin = []; // Permissions for Administrator
+            $permissions_all_users = []; // Permissions for all users
+
+            // Query SICA application to register roles
+            $app = App::where('name', 'AVICONTROL')->first();
+            
+            if (!$app) {
+                // If the app doesn't exist, create it
+                $app = App::create([
+                    'name' => 'AVICONTROL',
+                    'description' => 'AVICONTROL Application',
+                    'description_english' => 'AVICONTROL Application',
+                    'icon' => 'fa-feather-alt',
+                    'color' => '#4d7c0f',
+                    'status' => 'active'
+                ]);
+                
+                Log::info('Created AVICONTROL app with ID: ' . $app->id);
+            }
+
+            // ===================== Register all permissions for AVICONTROL application ==================
+            // Administrator main view
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.welcome'], [
+                'name' => 'Access to Administrator Role',
+                'description' => 'Access to Administrator Role',
+                'description_english' => 'Access to the Administrator Role',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+            
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.index'], [
+                'name' => 'Access to Administrator View',
+                'description' => 'Access to Administrator Role',
+                'description_english' => 'Access to the Administrator Role',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            // Permissions for poultry facilities management
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_facilities.index'], [
+                'name' => 'View poultry facilities list',
+                'description' => 'Allows viewing the list of all poultry facilities',
+                'description_english' => 'View list of all poultry facilities',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_facilities.create'], [
+                'name' => 'Create poultry facilities',
+                'description' => 'Allows creating new poultry facilities in the system',
+                'description_english' => 'Create new poultry facilities',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_facilities.edit'], [
+                'name' => 'Edit poultry facilities',
+                'description' => 'Allows editing information of existing poultry facilities',
+                'description_english' => 'Edit existing poultry facilities',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_facilities.destroy'], [
+                'name' => 'Delete poultry facilities',
+                'description' => 'Allows deleting poultry facilities from the system',
+                'description_english' => 'Delete poultry facilities',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            // Add permissions for poultry_houses routes (alias for poultry_facilities)
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.index'], [
+                'name' => 'View poultry houses list',
+                'description' => 'Allows viewing the list of all poultry houses',
+                'description_english' => 'View list of all poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.store'], [
+                'name' => 'View poultry houses list',
+                'description' => 'Esta es la funcion para cargar la lista de galpones',
+                'description_english' => 'View list of all poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.create'], [
+                'name' => 'Create poultry houses',
+                'description' => 'Allows creating new poultry houses in the system',
+                'description_english' => 'Create new poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.edit'], [
+                'name' => 'Edit poultry houses',
+                'description' => 'Allows editing information of existing poultry houses',
+                'description_english' => 'Edit existing poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.destroy'], [
+                'name' => 'Delete poultry houses',
+                'description' => 'Allows deleting poultry houses from the system',
+                'description_english' => 'Delete poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            // Add permissions for store, update, and show methods
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_facilities.store'], [
+                'name' => 'Store poultry facilities',
+                'description' => 'Allows storing new poultry facilities in the system',
+                'description_english' => 'Store new poultry facilities',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_facilities.update'], [
+                'name' => 'Update poultry facilities',
+                'description' => 'Allows updating existing poultry facilities',
+                'description_english' => 'Update existing poultry facilities',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_facilities.show'], [
+                'name' => 'Show poultry facilities',
+                'description' => 'Allows viewing details of poultry facilities',
+                'description_english' => 'View details of poultry facilities',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            // Same for poultry_houses
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.store'], [
+                'name' => 'Store poultry houses',
+                'description' => 'Allows storing new poultry houses in the system',
+                'description_english' => 'Store new poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.update'], [
+                'name' => 'Update poultry houses',
+                'description' => 'Allows updating existing poultry houses',
+                'description_english' => 'Update existing poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.poultry_houses.show'], [
+                'name' => 'Show poultry houses',
+                'description' => 'Allows viewing details of poultry houses',
+                'description_english' => 'View details of poultry houses',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            // Query ROLES
+            $rol_admin = Role::where('slug', 'avicontrol.admin')->first(); // Administrator Role
+            
+            if (!$rol_admin) {
+                // If the role doesn't exist, create it
+                $rol_admin = Role::create([
+                    'name' => 'AVICONTROL Administrator',
+                    'slug' => 'avicontrol.admin',
+                    'description' => 'Administrator role for AVICONTROL',
+                    'app_id' => $app->id,
+                ]);
+                
+                Log::info('Created AVICONTROL admin role with ID: ' . $rol_admin->id);
+            }
+
+            // Assignment of PERMISSIONS to ROLES of the AVICONTROL application (Synchronization of relationships without deleting existing relationships)
+            $rol_admin->permissions()->syncWithoutDetaching($permissions_admin);
+            
+            // Assign permissions to all users
+            // Get all roles
+            $all_roles = Role::all();
+            foreach ($all_roles as $role) {
+                $role->permissions()->syncWithoutDetaching($permissions_all_users);
+                Log::info('Assigned permissions to role: ' . $role->name);
+            }
+            
+            // Assign the current user to the admin role if they're not already
+            if (auth()->check()) {
+                $user = auth()->user();
+                $user->roles()->syncWithoutDetaching([$rol_admin->id]);
+                Log::info('Assigned admin role to user: ' . $user->name);
+            }
+            
+            // Force permissions in database directly for all users
+            // This is a last resort approach - use with caution
+            $users = DB::table('users')->get();
+            foreach ($users as $user) {
+                // Check if user_role entry exists
+                $exists = DB::table('user_role')
+                    ->where('user_id', $user->id)
+                    ->where('role_id', $rol_admin->id)
+                    ->exists();
+                    
+                if (!$exists) {
+                    DB::table('user_role')->insert([
+                        'user_id' => $user->id,
+                        'role_id' => $rol_admin->id,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    Log::info('Forced admin role assignment to user ID: ' . $user->id);
+                }
+            }
+            
+            Log::info('PermissionsTableSeeder completed successfully');
+            
+        } catch (\Exception $e) {
+            Log::error('Error in PermissionsTableSeeder: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+        }
+    }
+}

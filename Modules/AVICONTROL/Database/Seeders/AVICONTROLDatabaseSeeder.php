@@ -1,4 +1,5 @@
 <?php
+
 namespace Modules\AVICONTROL\Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -16,6 +17,9 @@ class AVICONTROLDatabaseSeeder extends Seeder
             $this->call(AppTableSeeder::class);
             $this->call(PeopleTableSeeder::class);
             $this->call(UsersTableSeeder::class);
+            $this->call(RolesTableSeeder::class);
+            $this->call(PermissionsTableSeeder::class);
+            $this->call(PoultryFacilitiesTableSeeder::class); // Actualizado
 
             DB::commit();
         } catch (\Exception $e) {
