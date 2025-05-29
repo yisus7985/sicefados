@@ -53,4 +53,44 @@ class PoultryFacility extends Model
         $area = $this->getAreaAttribute();
         return $area > 0 ? $this->capacity / $area : 0;
     }
+
+    // Relación con las aves
+    public function birds()
+    {
+        return $this->hasMany(Bird::class, 'poultry_facility_id');
+    }
+
+    // Relación con aves activas
+    public function activeBirds()
+    {
+        return $this->hasMany(Bird::class, 'poultry_facility_id')->where('status', 'active');
+    }
+
+    // Calcular el total de aves activas
+    public function getTotalActiveBirdsAttribute()
+    {
+        return $this->activeBirds()->sum('quantity');
+    }
+
+    // Calcular el porcentaje de ocupación
+    public function getOccupancyPercentageAttribute()
+    {
+        if ($this->capacity == 0) {
+            return 0;
+        }
+        
+        return round(($this->total_active_birds / $this->capacity) * 100, 2);
+    }
+
+    // Verificar si el galpón está disponible para más aves
+    public function getAvailableCapacityAttribute()
+    {
+        return $this->capacity - $this->total_active_birds;
+    }
+
+    // Verificar si el galpón puede acomodar cierta cantidad de aves
+    public function canAccommodate($quantity)
+    {
+        return $this->available_capacity >= $quantity;
+    }
 }

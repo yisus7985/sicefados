@@ -20,6 +20,7 @@ class AVICONTROLDatabaseSeeder extends Seeder
             $this->call(RolesTableSeeder::class);
             $this->call(PermissionsTableSeeder::class);
             $this->call(PoultryFacilitiesTableSeeder::class); // Actualizado
+            $this->call(BirdsTableSeeder::class); // Agregar esta línea
 
             DB::commit();
         } catch (\Exception $e) {

@@ -200,6 +200,79 @@ class PermissionsTableSeeder extends Seeder
             $permissions_admin[] = $permission->id;
             $permissions_all_users[] = $permission->id;
 
+            // Permissions for birds management
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.birds.index'], [
+                'name' => 'View birds list',
+                'description' => 'Allows viewing the list of all birds',
+                'description_english' => 'View list of all birds',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.birds.create'], [
+                'name' => 'Create birds',
+                'description' => 'Allows creating new bird batches in the system',
+                'description_english' => 'Create new bird batches',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.birds.store'], [
+                'name' => 'Store birds',
+                'description' => 'Allows storing new bird batches in the system',
+                'description_english' => 'Store new bird batches',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.birds.show'], [
+                'name' => 'Show birds',
+                'description' => 'Allows viewing details of bird batches',
+                'description_english' => 'View details of bird batches',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.birds.edit'], [
+                'name' => 'Edit birds',
+                'description' => 'Allows editing information of existing bird batches',
+                'description_english' => 'Edit existing bird batches',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.birds.update'], [
+                'name' => 'Update birds',
+                'description' => 'Allows updating existing bird batches',
+                'description_english' => 'Update existing bird batches',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.birds.destroy'], [
+                'name' => 'Delete birds',
+                'description' => 'Allows deleting bird batches from the system',
+                'description_english' => 'Delete bird batches',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.facilities.capacity'], [
+                'name' => 'View facility capacity',
+                'description' => 'Allows viewing facility capacity information',
+                'description_english' => 'View facility capacity information',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
             // Query ROLES
             $rol_admin = Role::where('slug', 'avicontrol.admin')->first(); // Administrator Role
             

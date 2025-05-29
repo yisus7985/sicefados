@@ -405,11 +405,14 @@
             border-radius: 5px;
             font-weight: 600;
             transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
         
         .btn-custom:hover {
             background-color: var(--primary-dark);
             transform: translateY(-2px);
+            color: var(--light);
         }
         
         .btn-custom-outline {
@@ -535,7 +538,7 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a href="#" class="sidebar-brand">
+            <a href="{{ route('avicontrol.admin.welcome') }}" class="sidebar-brand">
                 <i class="fas fa-feather-alt"></i>
                 <span>AVICONTROL</span>
             </a>
@@ -572,6 +575,10 @@
             <a href="{{ route('avicontrol.admin.poultry_facilities.index') }}" class="menu-item">
                 <i class="fas fa-cog"></i>
                 <span>Instalaciones</span>
+            </a>
+            <a href="{{ route('avicontrol.admin.birds.index') }}" class="menu-item">
+                <i class="fas fa-dove"></i>
+                <span>Gestión de Aves</span>
             </a>
             <a href="#" class="menu-item">
                 <i class="fas fa-bell"></i>
@@ -663,6 +670,23 @@
                         </div>
                         <a href="{{ route('avicontrol.admin.poultry_facilities.index') }}" class="btn btn-light">
                             <i class="fas fa-plus-circle me-1"></i> Gestionar Instalaciones
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión de Aves Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-success text-white">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0"><i class="fas fa-dove me-2"></i>Gestión de Aves</h4>
+                            <p class="mb-0">Registre y administre los lotes de aves en cada instalación</p>
+                        </div>
+                        <a href="{{ route('avicontrol.admin.birds.index') }}" class="btn btn-light">
+                            <i class="fas fa-plus-circle me-1"></i> Gestionar Aves
                         </a>
                     </div>
                 </div>
@@ -835,6 +859,15 @@
                 <h3 class="module-title">Informes</h3>
                 <p class="module-description">Generación de informes y estadísticas detalladas.</p>
                 <button class="btn btn-custom">Acceder</button>
+            </div>
+            
+            <div class="module-card">
+                <div class="module-icon success">
+                    <i class="fas fa-dove"></i>
+                </div>
+                <h3 class="module-title">Gestión de Aves</h3>
+                <p class="module-description">Registre y controle los lotes de aves por instalación.</p>
+                <a href="{{ route('avicontrol.admin.birds.index') }}" class="btn btn-custom">Acceder</a>
             </div>
             
             <div class="module-card">

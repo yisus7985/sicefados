@@ -26,6 +26,18 @@ Route::middleware(['web', 'lang'])->group(function() {
             Route::get('poultry_houses/{id}/edit', 'PoultryFacilityController@edit')->name('poultry_houses.edit');
             Route::put('poultry_houses/{id}', 'PoultryFacilityController@update')->name('poultry_houses.update');
             Route::delete('poultry_houses/{id}', 'PoultryFacilityController@destroy')->name('poultry_houses.destroy');
+
+            // Routes for birds management
+            Route::get('birds', 'BirdController@index')->name('birds.index');
+            Route::get('birds/create', 'BirdController@create')->name('birds.create');
+            Route::post('birds', 'BirdController@store')->name('birds.store');
+            Route::get('birds/{id}', 'BirdController@show')->name('birds.show');
+            Route::get('birds/{id}/edit', 'BirdController@edit')->name('birds.edit');
+            Route::put('birds/{id}', 'BirdController@update')->name('birds.update');
+            Route::delete('birds/{id}', 'BirdController@destroy')->name('birds.destroy');
+
+            // AJAX route for facility capacity
+            Route::get('facilities/{id}/capacity', 'BirdController@getFacilityCapacity')->name('facilities.capacity');
         });
     });
 });
