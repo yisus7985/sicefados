@@ -10,7 +10,7 @@ class Galpon extends Model
     use SoftDeletes;
 
     protected $table = 'galpones';
-    
+
     protected $fillable = [
         'nombre',
         'largo',
@@ -29,25 +29,22 @@ class Galpon extends Model
         'deleted_at'
     ];
 
-    // Relación con producción diaria (a implementar en el futuro)
+    // Relación con producción diaria (a futuro)
     public function produccionDiaria()
     {
         return $this->hasMany(ProduccionDiaria::class);
     }
 
-    // Calcular área del galpón
     public function getAreaAttribute()
     {
         return $this->largo * $this->ancho;
     }
 
-    // Calcular volumen del galpón
     public function getVolumenAttribute()
     {
         return $this->largo * $this->ancho * $this->alto;
     }
 
-    // Calcular densidad de aves (aves por metro cuadrado)
     public function getDensidadAttribute()
     {
         $area = $this->getAreaAttribute();

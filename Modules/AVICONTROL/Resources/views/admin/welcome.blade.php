@@ -852,14 +852,15 @@
                 <button class="btn btn-custom">Acceder</button>
             </div>
             
-            <div class="module-card">
-                <div class="module-icon info">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <h3 class="module-title">Informes</h3>
-                <p class="module-description">Generación de informes y estadísticas detalladas.</p>
-                <button class="btn btn-custom">Acceder</button>
-            </div>
+          <div class="module-card">
+    <div class="module-icon info">
+        <i class="fas fa-chart-bar"></i>
+    </div>
+    <h3 class="module-title">Informes</h3>
+    <p class="module-description">Generación de informes y estadísticas detalladas.</p>
+    <a href="{{ route('avicontrol.admin.information.index') }}" class="btn btn-custom">Acceder</a>
+</div>
+
             
             <div class="module-card">
                 <div class="module-icon success">

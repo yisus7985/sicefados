@@ -29,50 +29,43 @@ class PoultryFacility extends Model
         'deleted_at'
     ];
 
-    // Relation with daily production (to be implemented in the future)
     public function dailyProduction()
     {
         return $this->hasMany(DailyProduction::class);
     }
 
-    // Calculate area of the poultry facility
     public function getAreaAttribute()
     {
         return $this->length * $this->width;
     }
 
-    // Calculate volume of the poultry facility
     public function getVolumeAttribute()
     {
         return $this->length * $this->width * $this->height;
     }
 
-    // Calculate bird density (birds per square meter)
     public function getDensityAttribute()
     {
         $area = $this->getAreaAttribute();
         return $area > 0 ? $this->capacity / $area : 0;
     }
 
-    // Relación con las aves
+    // Relación principal con las aves
     public function birds()
     {
         return $this->hasMany(Bird::class, 'poultry_facility_id');
     }
 
-    // Relación con aves activas
     public function activeBirds()
     {
         return $this->hasMany(Bird::class, 'poultry_facility_id')->where('status', 'active');
     }
 
-    // Calcular el total de aves activas
     public function getTotalActiveBirdsAttribute()
     {
         return $this->activeBirds()->sum('quantity');
     }
 
-    // Calcular el porcentaje de ocupación
     public function getOccupancyPercentageAttribute()
     {
         if ($this->capacity == 0) {
@@ -82,15 +75,19 @@ class PoultryFacility extends Model
         return round(($this->total_active_birds / $this->capacity) * 100, 2);
     }
 
-    // Verificar si el galpón está disponible para más aves
     public function getAvailableCapacityAttribute()
     {
         return $this->capacity - $this->total_active_birds;
     }
 
-    // Verificar si el galpón puede acomodar cierta cantidad de aves
     public function canAccommodate($quantity)
     {
         return $this->available_capacity >= $quantity;
+    }
+
+    // Relación adicional con aves usando el campo 'galpon_id'
+    public function aves()
+    {
+        return $this->hasMany(Bird::class, 'galpon_id');
     }
 }

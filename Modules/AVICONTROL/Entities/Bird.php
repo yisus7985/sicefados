@@ -13,6 +13,7 @@ class Bird extends Model
     
     protected $fillable = [
         'poultry_facility_id',
+        'galpon_id', // Asegúrate de incluir esto si usarás la relación
         'batch_code',
         'bird_type',
         'quantity',
@@ -40,10 +41,16 @@ class Bird extends Model
         'purchase_price' => 'decimal:2'
     ];
 
-    // Relación con el galpón
+    // Relación principal con el galpón (poultry_facility_id)
     public function poultryFacility()
     {
         return $this->belongsTo(PoultryFacility::class, 'poultry_facility_id');
+    }
+
+    // Relación adicional con otro campo (galpon_id)
+    public function galpon()
+    {
+        return $this->belongsTo(PoultryFacility::class, 'galpon_id');
     }
 
     // Accessor para obtener el nombre del tipo de ave en español
@@ -59,7 +66,7 @@ class Bird extends Model
         return $types[$this->bird_type] ?? $this->bird_type;
     }
 
-    // Accessor para obtener el nombre del estado en español
+    // Accessor para el nombre del estado
     public function getStatusNameAttribute()
     {
         $statuses = [
@@ -72,40 +79,39 @@ class Bird extends Model
         return $statuses[$this->status] ?? $this->status;
     }
 
-    // Calcular la edad actual en semanas
+    // Edad actual
     public function getCurrentAgeWeeksAttribute()
     {
         if (!$this->age_weeks || !$this->entry_date) {
             return null;
         }
-        
+
         $weeksFromEntry = $this->entry_date->diffInWeeks(now());
         return $this->age_weeks + $weeksFromEntry;
     }
 
-    // Calcular el valor total del lote
+    // Valor total
     public function getTotalValueAttribute()
     {
         return $this->quantity * ($this->purchase_price ?? 0);
     }
 
-    // Calcular la mortalidad
+    // Mortalidad
     public function getMortalityAttribute()
     {
         return $this->initial_quantity - $this->quantity;
     }
 
-    // Calcular el porcentaje de mortalidad
     public function getMortalityPercentageAttribute()
     {
         if ($this->initial_quantity == 0) {
             return 0;
         }
-        
+
         return round(($this->mortality / $this->initial_quantity) * 100, 2);
     }
 
-    // Scopes para filtros
+    // Scopes
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

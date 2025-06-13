@@ -5,6 +5,7 @@ namespace Modules\AVICONTROL\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
 
 class BypassPermissionMiddleware
 {
@@ -24,16 +25,15 @@ class BypassPermissionMiddleware
             'user' => auth()->check() ? auth()->user()->id : 'Guest'
         ]);
         
-        // Force the user to have all permissions
+        // Bypass permission checks using Gate
         if (auth()->check()) {
             $user = auth()->user();
             
-            // This is a hack to bypass permission checks
-            // It temporarily modifies the user's can method to always return true
-            $user->can = function($permission) {
-                Log::info("Bypassing permission check for: " . $permission);
-                return true;
-            };
+            // Define a catch-all gate that always returns true
+            Gate::before(function ($user, $ability) {
+                Log::info("Bypassing permission check for: " . $ability);
+                return true; // Allow everything
+            });
             
             Log::info('BypassPermissionMiddleware: Permissions bypassed for user ' . $user->id);
         }
