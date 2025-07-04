@@ -522,10 +522,13 @@
                                                 <br><small class="text-muted">{{ $bird->breed }}</small>
                                             @endif
                                         </td>
-                                        <td>
-                                            <i class="fas fa-warehouse text-primary me-1"></i>
-                                            {{ $bird->poultryFacility->name }}
-                                        </td>
+                                        @if($bird->poultryFacility)
+    <i class="fas fa-warehouse text-primary me-1"></i>
+    {{ $bird->poultryFacility->name }}
+@else
+    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+    <span class="text-muted">Sin instalación asignada</span>
+@endif
                                         <td>
                                             @switch($bird->bird_type)
                                                 @case('laying_hens')

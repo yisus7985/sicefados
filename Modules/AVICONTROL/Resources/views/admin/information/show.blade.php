@@ -18,16 +18,16 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1800px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
+            border-radius: 0px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: linear-gradient(135deg, #4E7E0E 0%, #4E7E0E 100%);
             color: white;
             padding: 30px;
             text-align: center;

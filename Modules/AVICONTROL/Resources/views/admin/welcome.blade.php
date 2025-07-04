@@ -566,7 +566,7 @@
                 <i class="fas fa-calculator"></i>
                 <span>Costos</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="{{ route('avicontrol.admin.information.index') }}" class="menu-item">
                 <i class="fas fa-chart-bar"></i>
                 <span>Informes</span>
             </a>

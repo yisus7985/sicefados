@@ -4,12 +4,18 @@ use Illuminate\Support\Facades\Route;
 use Modules\AVICONTROL\Http\Controllers\InformationController;
 
 Route::middleware(['web', 'lang'])->group(function () {
+
     Route::prefix('avicontrol')->group(function () {
+
+        // Página principal
         Route::get('/index', 'AVICONTROLController@index')->name('cefa.avicontrol.index');
+
+        // Vista de bienvenida para administradores
         Route::get('/admin/welcome', 'AVICONTROLController@admin')->name('avicontrol.admin.welcome');
 
         // Grupo de rutas administrativas
         Route::prefix('admin')->name('avicontrol.admin.')->group(function () {
+
             // Rutas de galpones (poultry facilities)
             Route::get('poultry_facilities', 'PoultryFacilityController@index')->name('poultry_facilities.index');
             Route::get('poultry_facilities/create', 'PoultryFacilityController@create')->name('poultry_facilities.create');
@@ -19,7 +25,7 @@ Route::middleware(['web', 'lang'])->group(function () {
             Route::put('poultry_facilities/{id}', 'PoultryFacilityController@update')->name('poultry_facilities.update');
             Route::delete('poultry_facilities/{id}', 'PoultryFacilityController@destroy')->name('poultry_facilities.destroy');
 
-            // Alias de poultry_houses
+            // Alias de poultry_houses (se usan las mismas acciones que poultry_facilities)
             Route::get('poultry_houses', 'PoultryFacilityController@index')->name('poultry_houses.index');
             Route::get('poultry_houses/create', 'PoultryFacilityController@create')->name('poultry_houses.create');
             Route::post('poultry_houses', 'PoultryFacilityController@store')->name('poultry_houses.store');
@@ -40,9 +46,12 @@ Route::middleware(['web', 'lang'])->group(function () {
             // AJAX para obtener capacidad del galpón
             Route::get('facilities/{id}/capacity', 'BirdController@getFacilityCapacity')->name('facilities.capacity');
 
-            // ✅ NUEVAS RUTAS PARA INFORMES
+            // ✅ Nuevas rutas para informes
             Route::get('information', [InformationController::class, 'index'])->name('information.index');
             Route::get('information/{id}', [InformationController::class, 'show'])->name('information.show');
+
         });
+
     });
+
 });
