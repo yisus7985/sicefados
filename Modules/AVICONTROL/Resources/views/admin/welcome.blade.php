@@ -676,6 +676,23 @@
             </div>
         </div>
 
+        <!-- Gestión de Inventario Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-success text-white">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0"><i class="fas fa-boxes me-2"></i>Gestión de Inventario</h4>
+                            <p class="mb-0">Administre y controle los productos e insumos del inventario</p>
+                        </div>
+                        <a href="{{ route('avicontrol.admin.inventory.index') }}" class="btn btn-light">
+                            <i class="fas fa-boxes me-1"></i> Gestionar Inventario
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Gestión de Aves Section -->
         <div class="row mb-4">
             <div class="col-12">
@@ -831,7 +848,7 @@
                 </div>
                 <h3 class="module-title">Inventario</h3>
                 <p class="module-description">Gestión de productos, suministros y niveles de stock.</p>
-                <button class="btn btn-custom">Acceder</button>
+                <a href="{{ route('avicontrol.admin.inventory.index') }}" class="btn btn-custom">Acceder</a>
             </div>
             
             <div class="module-card">

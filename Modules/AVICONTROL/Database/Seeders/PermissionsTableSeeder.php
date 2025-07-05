@@ -273,6 +273,117 @@ class PermissionsTableSeeder extends Seeder
             $permissions_admin[] = $permission->id;
             $permissions_all_users[] = $permission->id;
 
+            // Permissions for inventory management
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.index'], [
+                'name' => 'View inventory list',
+                'description' => 'Allows viewing the list of all inventory products',
+                'description_english' => 'View list of all inventory products',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.create'], [
+                'name' => 'Create inventory products',
+                'description' => 'Allows creating new inventory products in the system',
+                'description_english' => 'Create new inventory products',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.store'], [
+                'name' => 'Store inventory products',
+                'description' => 'Allows storing new inventory products in the system',
+                'description_english' => 'Store new inventory products',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.show'], [
+                'name' => 'Show inventory products',
+                'description' => 'Allows viewing details of inventory products',
+                'description_english' => 'View details of inventory products',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.edit'], [
+                'name' => 'Edit inventory products',
+                'description' => 'Allows editing information of existing inventory products',
+                'description_english' => 'Edit existing inventory products',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.update'], [
+                'name' => 'Update inventory products',
+                'description' => 'Allows updating existing inventory products',
+                'description_english' => 'Update existing inventory products',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.destroy'], [
+                'name' => 'Delete inventory products',
+                'description' => 'Allows deleting inventory products from the system',
+                'description_english' => 'Delete inventory products',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            // Permissions for inventory movements
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.movements.create'], [
+                'name' => 'Create inventory movements',
+                'description' => 'Allows creating new inventory movements',
+                'description_english' => 'Create new inventory movements',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.movements.store'], [
+                'name' => 'Store inventory movements',
+                'description' => 'Allows storing new inventory movements',
+                'description_english' => 'Store new inventory movements',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.movements.index'], [
+                'name' => 'View inventory movements',
+                'description' => 'Allows viewing inventory movements list',
+                'description_english' => 'View inventory movements list',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            // Permissions for inventory alerts
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.low_stock'], [
+                'name' => 'View low stock alerts',
+                'description' => 'Allows viewing low stock alerts',
+                'description_english' => 'View low stock alerts',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
+            $permission = Permission::updateOrCreate(['slug' => 'avicontrol.admin.inventory.expiring'], [
+                'name' => 'View expiring products',
+                'description' => 'Allows viewing expiring products alerts',
+                'description_english' => 'View expiring products alerts',
+                'app_id' => $app->id,
+            ]);
+            $permissions_admin[] = $permission->id;
+            $permissions_all_users[] = $permission->id;
+
             // Query ROLES
             $rol_admin = Role::where('slug', 'avicontrol.admin')->first(); // Administrator Role
             
