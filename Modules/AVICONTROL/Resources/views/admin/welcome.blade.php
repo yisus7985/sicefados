@@ -709,6 +709,22 @@
                 </div>
             </div>
         </div>
+        <!-- Gestión de Informes Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-info text-white">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Gestión de Informes</h4>
+                            <p class="mb-0">Genere y consulte informes detallados de las instalaciones y producción</p>
+                        </div>
+                        <a href="{{ route('avicontrol.admin.information.index') }}" class="btn btn-light">
+                            <i class="fas fa-chart-bar me-1"></i> Gestionar Informes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Dashboard Content -->
         <div class="dashboard-content">

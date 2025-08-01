@@ -12,7 +12,7 @@ Route::middleware(['web', 'lang'])->group(function () {
     Route::prefix('avicontrol')->group(function () {
 
         // Página principal
-        Route::get('/index', 'AVICONTROLController@index')->name('cefa.avicontrol.index');
+        Route::get('/index', [AVICONTROLController::class, 'index'])->name('cefa.avicontrol.index');
 
         // Vista de bienvenida para administradores
         Route::get('/admin/welcome', [AVICONTROLController::class, 'admin'])->name('avicontrol.admin.welcome');
@@ -30,13 +30,13 @@ Route::middleware(['web', 'lang'])->group(function () {
             Route::delete('poultry_facilities/{id}', [PoultryFacilityController::class, 'destroy'])->name('poultry_facilities.destroy');
 
             // Alias de poultry_houses (se usan las mismas acciones que poultry_facilities)
-            Route::get('poultry_houses', 'PoultryFacilityController@index')->name('poultry_houses.index');
-            Route::get('poultry_houses/create', 'PoultryFacilityController@create')->name('poultry_houses.create');
-            Route::post('poultry_houses', 'PoultryFacilityController@store')->name('poultry_houses.store');
-            Route::get('poultry_houses/{id}', 'PoultryFacilityController@show')->name('poultry_houses.show');
-            Route::get('poultry_houses/{id}/edit', 'PoultryFacilityController@edit')->name('poultry_houses.edit');
-            Route::put('poultry_houses/{id}', 'PoultryFacilityController@update')->name('poultry_houses.update');
-            Route::delete('poultry_houses/{id}', 'PoultryFacilityController@destroy')->name('poultry_houses.destroy');
+            Route::get('poultry_houses', [PoultryFacilityController::class, 'index'])->name('poultry_houses.index');
+            Route::get('poultry_houses/create', [PoultryFacilityController::class, 'create'])->name('poultry_houses.create');
+            Route::post('poultry_houses', [PoultryFacilityController::class, 'store'])->name('poultry_houses.store');
+            Route::get('poultry_houses/{id}', [PoultryFacilityController::class, 'show'])->name('poultry_houses.show');
+            Route::get('poultry_houses/{id}/edit', [PoultryFacilityController::class, 'edit'])->name('poultry_houses.edit');
+            Route::put('poultry_houses/{id}', [PoultryFacilityController::class, 'update'])->name('poultry_houses.update');
+            Route::delete('poultry_houses/{id}', [PoultryFacilityController::class, 'destroy'])->name('poultry_houses.destroy');
 
             // Rutas para aves (birds)
             Route::get('birds', [BirdController::class, 'index'])->name('birds.index');
@@ -48,11 +48,15 @@ Route::middleware(['web', 'lang'])->group(function () {
             Route::delete('birds/{id}', [BirdController::class, 'destroy'])->name('birds.destroy');
 
             // AJAX para obtener capacidad del galpón
-            Route::get('facilities/{id}/capacity', 'BirdController@getFacilityCapacity')->name('facilities.capacity');
+            Route::get('facilities/{id}/capacity', [BirdController::class, 'getFacilityCapacity'])->name('facilities.capacity');
 
             // ✅ Nuevas rutas para informes
             Route::get('information', [InformationController::class, 'index'])->name('information.index');
             Route::get('information/{id}', [InformationController::class, 'show'])->name('information.show');
+            // Endpoint AJAX para informes filtrados
+            Route::post('information/report-data', [InformationController::class, 'getReportData'])->name('information.report_data');
+            // Endpoint para exportar PDF de informes
+            Route::post('information/export-pdf', [InformationController::class, 'exportPdf'])->name('information.export_pdf');
 
             // ✅ Rutas para inventario
             Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

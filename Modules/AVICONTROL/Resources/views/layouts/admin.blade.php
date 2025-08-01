@@ -212,9 +212,9 @@
 </head>
 <body>
     @php
-        $isInventory = request()->routeIs('avicontrol.admin.inventory.*');
+        $isInventoryOrInformation = request()->routeIs('avicontrol.admin.inventory.*') || request()->routeIs('avicontrol.admin.information.*');
     @endphp
-    @if($isInventory)
+    @if($isInventoryOrInformation)
         <style>
             .sidebar {
                 width: 220px;
