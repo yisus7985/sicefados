@@ -232,6 +232,66 @@
             margin-right: 0;
         }
         
+        .bird-image-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .bird-image-container:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bird-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bird-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .bird-type-name {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .bird-breed-name {
+            font-size: 0.95rem;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+        
+        .image-placeholder {
+            width: 80px;
+            height: 80px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 0.8rem;
+            text-align: center;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
         @media (max-width: 768px) {
             .content-wrapper {
                 margin-left: 0;
@@ -245,6 +305,17 @@
             .sidebar.expanded {
                 transform: translateX(0);
                 width: 280px;
+            }
+            
+            .bird-image-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .bird-image, .image-placeholder {
+                width: 60px;
+                height: 60px;
             }
         }
     </style>
@@ -389,6 +460,42 @@
                                                     </span>
                                                     @break
                                             @endswitch
+                                            
+                                            <!-- Contenedor de imagen del tipo de ave -->
+                                            <div class="bird-image-container">
+                                                <img src="/avicontrol/img/tipoave/{{ $bird->bird_type }}.jpg" 
+                                                     alt="Tipo de Ave" 
+                                                     class="bird-image"
+                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="image-placeholder" style="display: none;">
+                                                    <i class="fas fa-image"></i><br>
+                                                    <small>Sin imagen</small>
+                                                </div>
+                                                <div class="bird-info">
+                                                    <div class="bird-type-name">
+                                                        @switch($bird->bird_type)
+                                                            @case('laying_hens')
+                                                                Gallinas Ponedoras
+                                                                @break
+                                                            @case('broilers')
+                                                                Pollos de Engorde
+                                                                @break
+                                                            @case('chicks')
+                                                                Pollitos
+                                                                @break
+                                                            @case('breeders')
+                                                                Reproductores
+                                                                @break
+                                                            @case('roosters')
+                                                                Gallos
+                                                                @break
+                                                        @endswitch
+                                                    </div>
+                                                    <div class="bird-breed-name">
+                                                        <i class="fas fa-feather me-1"></i> Tipo de Ave
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr>
@@ -450,7 +557,67 @@
                                 <table class="table table-borderless">
                                     <tr>
                                         <td class="fw-bold text-gray-600">Raza:</td>
-                                        <td>{{ $bird->breed ?: 'No especificada' }}</td>
+                                        <td>
+                                            {{ $bird->breed ?: 'No especificada' }}
+                                            
+                                            @if($bird->breed)
+                                                <!-- Contenedor de imagen de la raza -->
+                                                <div class="bird-image-container">
+                                                    @php
+                                                        $breedImageName = '';
+                                                        switch($bird->breed) {
+                                                            case 'Rhode Island Red':
+                                                                $breedImageName = 'rhode_island_red';
+                                                                break;
+                                                            case 'Leghorn':
+                                                                $breedImageName = 'leghorn';
+                                                                break;
+                                                            case 'Plymouth Rock':
+                                                                $breedImageName = 'plymouth_rock';
+                                                                break;
+                                                            case 'Sussex':
+                                                                $breedImageName = 'sussex';
+                                                                break;
+                                                            case 'Orpington':
+                                                                $breedImageName = 'orpington';
+                                                                break;
+                                                            case 'Australorp':
+                                                                $breedImageName = 'australorp';
+                                                                break;
+                                                            case 'New Hampshire':
+                                                                $breedImageName = 'new_hampshire';
+                                                                break;
+                                                            case 'Cornish Cross':
+                                                                $breedImageName = 'cornish_cross';
+                                                                break;
+                                                            case 'Cobb 500':
+                                                                $breedImageName = 'cobb_500';
+                                                                break;
+                                                            case 'Ross 308':
+                                                                $breedImageName = 'ross_308';
+                                                                break;
+                                                            default:
+                                                                $breedImageName = 'other';
+                                                        }
+                                                    @endphp
+                                                    
+                                                    <img src="/avicontrol/img/raza/{{ $breedImageName }}.jpg" 
+                                                         alt="Raza" 
+                                                         class="bird-image"
+                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                    <div class="image-placeholder" style="display: none;">
+                                                        <i class="fas fa-image"></i><br>
+                                                        <small>Sin imagen</small>
+                                                    </div>
+                                                    <div class="bird-info">
+                                                        <div class="bird-type-name">{{ $bird->breed }}</div>
+                                                        <div class="bird-breed-name">
+                                                            <i class="fas fa-dna me-1"></i> Raza
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold text-gray-600">Peso Promedio:</td>
@@ -571,5 +738,28 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejo de errores de imágenes
+            const images = document.querySelectorAll('.bird-image');
+            images.forEach(function(img) {
+                img.addEventListener('error', function() {
+                    this.style.display = 'none';
+                    const placeholder = this.nextElementSibling;
+                    if (placeholder && placeholder.classList.contains('image-placeholder')) {
+                        placeholder.style.display = 'flex';
+                    }
+                });
+                
+                img.addEventListener('load', function() {
+                    this.style.display = 'block';
+                    const placeholder = this.nextElementSibling;
+                    if (placeholder && placeholder.classList.contains('image-placeholder')) {
+                        placeholder.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

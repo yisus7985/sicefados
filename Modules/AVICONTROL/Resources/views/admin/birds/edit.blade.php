@@ -222,6 +222,30 @@
             font-weight: 600;
         }
         
+        .bird-image-container {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .bird-image-container:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bird-image-container img {
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bird-image-container p {
+            margin: 8px 0 0 0;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
         @media (max-width: 768px) {
             .content-wrapper {
                 margin-left: 0;
@@ -417,7 +441,7 @@
                                 </label>
                                 <select name="bird_type" id="bird_type" 
                                         class="form-select @error('bird_type') is-invalid @enderror" 
-                                        required>
+                                        required onchange="updateBirdTypeImage()">
                                     <option value="">Seleccione el tipo de ave</option>
                                     <option value="laying_hens" {{ old('bird_type', $bird->bird_type) == 'laying_hens' ? 'selected' : '' }}>
                                         Gallinas Ponedoras
@@ -438,6 +462,10 @@
                                 @error('bird_type')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <div id="birdTypeImage" class="mt-2 text-center bird-image-container" style="display: none;">
+                                    <img id="birdTypeImg" src="" alt="Tipo de Ave" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                    <p id="birdTypeName" class="mt-1 text-muted small"></p>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -524,7 +552,8 @@
                             <div class="mb-3">
                                 <label for="breed" class="form-label">Raza</label>
                                 <select name="breed" id="breed" 
-                                        class="form-select @error('breed') is-invalid @enderror">
+                                        class="form-select @error('breed') is-invalid @enderror"
+                                        onchange="updateBreedImage()">
                                     <option value="">Seleccione una raza</option>
                                     <option value="Rhode Island Red" {{ old('breed', $bird->breed) == 'Rhode Island Red' ? 'selected' : '' }}>Rhode Island Red</option>
                                     <option value="Leghorn" {{ old('breed', $bird->breed) == 'Leghorn' ? 'selected' : '' }}>Leghorn</option>
@@ -541,6 +570,10 @@
                                 @error('breed')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <div id="breedImage" class="mt-2 text-center bird-image-container" style="display: none;">
+                                    <img id="breedImg" src="" alt="Raza" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                    <p id="breedName" class="mt-1 text-muted small"></p>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -746,10 +779,124 @@
         document.getElementById('purchase_price').addEventListener('input', updateSummary);
         document.getElementById('average_weight').addEventListener('input', updateSummary);
         document.getElementById('poultry_facility_id').addEventListener('change', updateFacilityInfo);
+        document.getElementById('bird_type').addEventListener('change', updateBirdTypeImage);
+        document.getElementById('breed').addEventListener('change', updateBreedImage);
 
         document.addEventListener('DOMContentLoaded', function() {
             updateFacilityInfo();
+            updateBirdTypeImage();
+            updateBreedImage();
         });
+
+        function updateBirdTypeImage() {
+            const select = document.getElementById('bird_type');
+            const selectedOption = select.options[select.selectedIndex];
+            const imageContainer = document.getElementById('birdTypeImage');
+            const image = document.getElementById('birdTypeImg');
+            const name = document.getElementById('birdTypeName');
+
+            if (selectedOption.value) {
+                const imagePath = `/avicontrol/img/tipoave/${selectedOption.value}.jpg`;
+                console.log('Intentando cargar imagen:', imagePath);
+                image.src = imagePath;
+                name.textContent = selectedOption.textContent;
+                imageContainer.style.display = 'block';
+                
+                // Manejo de errores de imagen
+                image.onerror = function() {
+                    console.log('Error cargando imagen:', imagePath);
+                    this.style.display = 'none';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-warning mt-2';
+                    errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Imagen no disponible - Ruta: ' + imagePath;
+                    imageContainer.appendChild(errorDiv);
+                };
+                
+                image.onload = function() {
+                    console.log('Imagen cargada exitosamente:', imagePath);
+                    this.style.display = 'block';
+                    const errorDiv = imageContainer.querySelector('.alert-warning');
+                    if (errorDiv) {
+                        errorDiv.remove();
+                    }
+                };
+            } else {
+                imageContainer.style.display = 'none';
+            }
+        }
+
+        function updateBreedImage() {
+            const select = document.getElementById('breed');
+            const selectedOption = select.options[select.selectedIndex];
+            const imageContainer = document.getElementById('breedImage');
+            const image = document.getElementById('breedImg');
+            const name = document.getElementById('breedName');
+
+            if (selectedOption.value) {
+                let imageFileName = '';
+                switch(selectedOption.value) {
+                    case 'Rhode Island Red':
+                        imageFileName = 'rhode_island_red';
+                        break;
+                    case 'Leghorn':
+                        imageFileName = 'leghorn';
+                        break;
+                    case 'Plymouth Rock':
+                        imageFileName = 'plymouth_rock';
+                        break;
+                    case 'Sussex':
+                        imageFileName = 'sussex';
+                        break;
+                    case 'Orpington':
+                        imageFileName = 'orpington';
+                        break;
+                    case 'Australorp':
+                        imageFileName = 'australorp';
+                        break;
+                    case 'New Hampshire':
+                        imageFileName = 'new_hampshire';
+                        break;
+                    case 'Cornish Cross':
+                        imageFileName = 'cornish_cross';
+                        break;
+                    case 'Cobb 500':
+                        imageFileName = 'cobb_500';
+                        break;
+                    case 'Ross 308':
+                        imageFileName = 'ross_308';
+                        break;
+                    case 'Otro':
+                        imageFileName = 'other';
+                        break;
+                    default:
+                        imageFileName = 'other';
+                }
+                
+                const imagePath = `/avicontrol/img/raza/${imageFileName}.jpg`;
+                image.src = imagePath;
+                name.textContent = selectedOption.textContent;
+                imageContainer.style.display = 'block';
+                
+                // Manejo de errores de imagen
+                image.onerror = function() {
+                    this.style.display = 'none';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-warning mt-2';
+                    errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Imagen no disponible';
+                    imageContainer.appendChild(errorDiv);
+                };
+                
+                image.onload = function() {
+                    this.style.display = 'block';
+                    const errorDiv = imageContainer.querySelector('.alert-warning');
+                    if (errorDiv) {
+                        errorDiv.remove();
+                    }
+                };
+            } else {
+                imageContainer.style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>

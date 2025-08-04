@@ -11,6 +11,15 @@ Route::middleware(['web', 'lang'])->group(function () {
 
     Route::prefix('avicontrol')->group(function () {
 
+        // Ruta para servir imágenes estáticas del módulo
+        Route::get('/img/{folder}/{filename}', function ($folder, $filename) {
+            $path = module_path('AVICONTROL', 'img/' . $folder . '/' . $filename);
+            if (file_exists($path)) {
+                return response()->file($path);
+            }
+            abort(404);
+        })->where(['folder' => '.*', 'filename' => '.*']);
+
         // Página principal
         Route::get('/index', [AVICONTROLController::class, 'index'])->name('cefa.avicontrol.index');
 
@@ -52,6 +61,7 @@ Route::middleware(['web', 'lang'])->group(function () {
 
             // ✅ Nuevas rutas para informes
             Route::get('information', [InformationController::class, 'index'])->name('information.index');
+            Route::get('information/inventory', [InformationController::class, 'inventory'])->name('information.inventory');
             Route::get('information/{id}', [InformationController::class, 'show'])->name('information.show');
             // Endpoint AJAX para informes filtrados
             Route::post('information/report-data', [InformationController::class, 'getReportData'])->name('information.report_data');

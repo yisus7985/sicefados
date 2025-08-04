@@ -46,6 +46,11 @@
                 </h1>
                 <p class="text-muted">Genere y consulte informes detallados de las instalaciones y producción</p>
             </div>
+            <div class="btn-group">
+                <a href="{{ route('avicontrol.admin.information.inventory') }}" class="btn btn-success">
+                    <i class="fas fa-boxes me-1"></i> Informes de Inventario
+                </a>
+            </div>
         </div>
         <div class="row mb-4">
             <div class="col-md-3">
