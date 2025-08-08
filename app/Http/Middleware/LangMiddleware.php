@@ -24,6 +24,13 @@ class LangMiddleware
             if (is_string($action['uses'])) {
                 $pos2 = strpos($action['uses'], 'Auth');
                 if ($pos2 === false) {
+                    // Excluir rutas de AVICONTROL de la verificación de autorización
+                    if (strpos($request->route()->getName(), 'avicontrol.') === 0) {
+                        // Log para debugging
+                        \Log::info('AVICONTROL route accessed: ' . $request->route()->getName());
+                        // Permitir acceso a rutas de AVICONTROL sin verificación
+                        return $next($request);
+                    }
                     // Si no contiene 'Auth', entonces verificar el acceso usando Gate
                     Gate::authorize('haveaccess', $request->route()->getName());
                 }

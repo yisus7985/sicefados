@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'AVICONTROL - Administración')</title>
     
     <!-- Bootstrap CSS -->
@@ -212,12 +213,12 @@
 </head>
 <body>
     @php
-        $isInventoryOrInformation = request()->routeIs('avicontrol.admin.inventory.*') || request()->routeIs('avicontrol.admin.information.*');
+        $isInventoryOrInformation = request()->routeIs('avicontrol.admin.inventory.*') || request()->routeIs('avicontrol.admin.information.*') || request()->routeIs('avicontrol.admin.production_costs.*') || request()->routeIs('avicontrol.admin.poultry_facilities.*') || request()->routeIs('avicontrol.admin.birds.*') || request()->routeIs('avicontrol.admin.alerts.*');
     @endphp
     @if($isInventoryOrInformation)
         <style>
             .sidebar {
-                width: 220px;
+                width: 280px;
                 background-color: #4d7c0f;
                 color: #fff;
                 height: 100vh;
@@ -227,30 +228,32 @@
                 overflow-y: auto;
                 z-index: 1000;
                 font-family: 'Open Sans', sans-serif;
+                transition: all 0.3s ease;
             }
             .sidebar-header {
-                padding: 20px 20px 10px 20px;
+                padding: 20px;
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
                 font-size: 1.2rem;
                 font-weight: 700;
-                border-bottom: 1px solid rgba(255,255,255,0.08);
+                border-bottom: 1px solid rgba(255,255,255,0.1);
             }
             .sidebar-brand {
                 color: #fff;
                 text-decoration: none;
                 display: flex;
                 align-items: center;
-                font-size: 1.2rem;
+                font-size: 1.5rem;
                 font-weight: 700;
             }
             .sidebar-brand i {
                 color: #f59e0b;
                 margin-right: 10px;
-                font-size: 1.5rem;
+                font-size: 1.8rem;
             }
             .sidebar-menu {
-                padding: 10px 0;
+                padding: 20px 0;
             }
             .menu-header {
                 font-size: 0.8rem;
@@ -261,12 +264,12 @@
                 margin-top: 10px;
             }
             .menu-item {
-                padding: 10px 25px;
+                padding: 12px 25px;
                 display: flex;
                 align-items: center;
-                color: #fff;
+                color: rgba(255, 255, 255, 0.8);
                 text-decoration: none;
-                transition: all 0.2s;
+                transition: all 0.3s ease;
                 border-left: 3px solid transparent;
                 font-size: 1rem;
                 font-weight: 500;
@@ -278,15 +281,16 @@
                 text-align: center;
             }
             .menu-item.active, .menu-item:hover {
-                background-color: rgba(255,255,255,0.08);
+                background-color: rgba(255,255,255,0.1);
                 color: #fff;
                 border-left: 3px solid #f59e0b;
             }
             .content-wrapper {
-                margin-left: 220px;
+                margin-left: 280px;
                 padding: 30px 20px 20px 20px;
                 min-height: 100vh;
                 background: #f1f5f9;
+                transition: all 0.3s ease;
             }
             @media (max-width: 991px) {
                 .sidebar { width: 100vw; position: relative; height: auto; }
@@ -302,12 +306,12 @@
             </div>
             <div class="sidebar-menu">
                 <div class="menu-header">PRINCIPAL</div>
-                <a href="{{ route('avicontrol.admin.welcome') }}" class="menu-item">
+                <a href="{{ route('avicontrol.admin.welcome') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.welcome') ? 'active' : '' }}">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>Dashboard</span>
                 </a>
                 <div class="menu-header">MÓDULOS</div>
-                <a href="{{ route('avicontrol.admin.inventory.index') }}" class="menu-item active">
+                <a href="{{ route('avicontrol.admin.inventory.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.inventory.*') ? 'active' : '' }}">
                     <i class="fas fa-boxes"></i>
                     <span>Inventario</span>
                 </a>
@@ -315,24 +319,24 @@
                     <i class="fas fa-egg"></i>
                     <span>Producción</span>
                 </a>
-                <a href="#" class="menu-item">
+                <a href="{{ route('avicontrol.admin.production_costs.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.production_costs.*') ? 'active' : '' }}">
                     <i class="fas fa-calculator"></i>
-                    <span>Costos</span>
+                    <span>Costos de Producción</span>
                 </a>
-                <a href="{{ route('avicontrol.admin.information.index') }}" class="menu-item">
+                <a href="{{ route('avicontrol.admin.information.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.information.*') ? 'active' : '' }}">
                     <i class="fas fa-chart-bar"></i>
                     <span>Informes</span>
                 </a>
                 <div class="menu-header">CONFIGURACIÓN</div>
-                <a href="{{ route('avicontrol.admin.poultry_facilities.index') }}" class="menu-item">
+                <a href="{{ route('avicontrol.admin.poultry_facilities.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.poultry_facilities.*') ? 'active' : '' }}">
                     <i class="fas fa-cog"></i>
                     <span>Instalaciones</span>
                 </a>
-                <a href="{{ route('avicontrol.admin.birds.index') }}" class="menu-item">
+                <a href="{{ route('avicontrol.admin.birds.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.birds.*') ? 'active' : '' }}">
                     <i class="fas fa-dove"></i>
                     <span>Gestión de Aves</span>
                 </a>
-                <a href="#" class="menu-item">
+                <a href="{{ route('avicontrol.admin.alerts.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.alerts.*') ? 'active' : '' }}">
                     <i class="fas fa-bell"></i>
                     <span>Alertas</span>
                 </a>
@@ -340,19 +344,18 @@
                     <i class="fas fa-clipboard-check"></i>
                     <span>Normativas</span>
                 </a>
-                <a href="#" class="menu-item">
-                    <i class="fas fa-users"></i>
-                    <span>Usuarios</span>
-                </a>
                 <div class="menu-header">CUENTA</div>
                 <a href="#" class="menu-item">
                     <i class="fas fa-user-cog"></i>
                     <span>Perfil</span>
                 </a>
-                <a href="#" class="menu-item">
+                <a href="{{ route('avicontrol.admin.logout') }}" class="menu-item" onclick="event.preventDefault(); document.getElementById('logout-form-sidebar').submit();">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Cerrar Sesión</span>
                 </a>
+                <form id="logout-form-sidebar" action="{{ route('avicontrol.admin.logout') }}" method="POST" class="d-none">
+                    @csrf
+                </form>
             </div>
         </div>
         <div class="content-wrapper">
@@ -405,7 +408,10 @@
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-1"></i> Configuración</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-1"></i> Cerrar Sesión</a></li>
+                                <li><a class="dropdown-item" href="{{ route('avicontrol.admin.logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="fas fa-sign-out-alt me-1"></i> Cerrar Sesión</a></li>
+                                <form id="logout-form" action="{{ route('avicontrol.admin.logout') }}" method="POST" class="d-none">
+                                    @csrf
+                                </form>
                             </ul>
                         </li>
                     </ul>

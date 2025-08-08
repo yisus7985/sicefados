@@ -1,11 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Modules\AVICONTROL\Http\Controllers\InformationController;
 use Modules\AVICONTROL\Http\Controllers\InventoryController;
 use Modules\AVICONTROL\Http\Controllers\AVICONTROLController;
 use Modules\AVICONTROL\Http\Controllers\BirdController;
 use Modules\AVICONTROL\Http\Controllers\PoultryFacilityController;
+use Modules\AVICONTROL\Http\Controllers\ProductionCostController;
+use Modules\AVICONTROL\Http\Controllers\ProfitabilityAnalysisController;
+use Modules\AVICONTROL\Http\Controllers\AlertController;
 
 Route::middleware(['web', 'lang'])->group(function () {
 
@@ -25,6 +29,12 @@ Route::middleware(['web', 'lang'])->group(function () {
 
         // Vista de bienvenida para administradores
         Route::get('/admin/welcome', [AVICONTROLController::class, 'admin'])->name('avicontrol.admin.welcome');
+
+        // Ruta específica de logout para AVICONTROL
+        Route::post('/admin/logout', function () {
+            Auth::logout();
+            return redirect()->route('cefa.welcome');
+        })->name('avicontrol.admin.logout');
 
         // Grupo de rutas administrativas
         Route::prefix('admin')->name('avicontrol.admin.')->group(function () {
@@ -85,6 +95,41 @@ Route::middleware(['web', 'lang'])->group(function () {
             // Rutas para alertas
             Route::get('inventory/alerts/low-stock', [InventoryController::class, 'lowStock'])->name('inventory.low_stock');
             Route::get('inventory/alerts/expiring', [InventoryController::class, 'expiring'])->name('inventory.expiring');
+
+            // ✅ Rutas para costos de producción (RF-013)
+            Route::get('production_costs', [ProductionCostController::class, 'index'])->name('production_costs.index');
+            Route::get('production_costs/create', [ProductionCostController::class, 'create'])->name('production_costs.create');
+            Route::post('production_costs', [ProductionCostController::class, 'store'])->name('production_costs.store');
+            Route::get('production_costs/{id}', [ProductionCostController::class, 'show'])->name('production_costs.show');
+            Route::get('production_costs/{id}/edit', [ProductionCostController::class, 'edit'])->name('production_costs.edit');
+            Route::put('production_costs/{id}', [ProductionCostController::class, 'update'])->name('production_costs.update');
+            Route::delete('production_costs/{id}', [ProductionCostController::class, 'destroy'])->name('production_costs.destroy');
+            Route::post('production_costs/{id}/confirm', [ProductionCostController::class, 'confirm'])->name('production_costs.confirm');
+            
+            // AJAX para calcular costos desde inventario
+            Route::post('production_costs/calculate-from-inventory', [ProductionCostController::class, 'calculateFromInventory'])->name('production_costs.calculate_from_inventory');
+            Route::get('production_costs/summary', [ProductionCostController::class, 'getCostSummary'])->name('production_costs.summary');
+
+            // ✅ Rutas para análisis de rentabilidad (RF-014)
+            Route::get('profitability_analysis', [ProfitabilityAnalysisController::class, 'index'])->name('profitability_analysis.index');
+            Route::get('profitability_analysis/create', [ProfitabilityAnalysisController::class, 'create'])->name('profitability_analysis.create');
+            Route::post('profitability_analysis', [ProfitabilityAnalysisController::class, 'store'])->name('profitability_analysis.store');
+            Route::get('profitability_analysis/{id}', [ProfitabilityAnalysisController::class, 'show'])->name('profitability_analysis.show');
+            Route::get('profitability_analysis/{id}/edit', [ProfitabilityAnalysisController::class, 'edit'])->name('profitability_analysis.edit');
+            Route::put('profitability_analysis/{id}', [ProfitabilityAnalysisController::class, 'update'])->name('profitability_analysis.update');
+            Route::delete('profitability_analysis/{id}', [ProfitabilityAnalysisController::class, 'destroy'])->name('profitability_analysis.destroy');
+            Route::post('profitability_analysis/{id}/confirm', [ProfitabilityAnalysisController::class, 'confirm'])->name('profitability_analysis.confirm');
+            
+            // Rutas para reportes de rentabilidad
+            Route::get('profitability_analysis/report/generate', [ProfitabilityAnalysisController::class, 'generateReport'])->name('profitability_analysis.report');
+            Route::post('profitability_analysis/report', [ProfitabilityAnalysisController::class, 'generateReport'])->name('profitability_analysis.generate_report');
+            Route::get('profitability_analysis/{id}/export-pdf', [ProfitabilityAnalysisController::class, 'exportPdf'])->name('profitability_analysis.export_pdf');
+            Route::get('profitability_analysis/summary', [ProfitabilityAnalysisController::class, 'getProfitabilitySummary'])->name('profitability_analysis.summary');
+
+            // ✅ Rutas para alertas (RF-020 y RF-021)
+            Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
+            Route::post('alerts/mark-read', [AlertController::class, 'markAsRead'])->name('alerts.mark_read');
+            Route::get('alerts/stats', [AlertController::class, 'getStats'])->name('alerts.stats');
 
         });
 

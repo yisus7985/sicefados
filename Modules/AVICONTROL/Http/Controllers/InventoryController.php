@@ -16,37 +16,66 @@ class InventoryController extends Controller
      */
     public function index()
     {
-        $products = InventoryProduct::with('movements')
-            ->orderBy('name')
-            ->paginate(15);
+        try {
+            // Verificar si las tablas existen
+            if (!\Schema::hasTable('avicontrol_inventory_products')) {
+                return view('avicontrol::admin.inventory.index', [
+                    'products' => collect([]),
+                    'stats' => [
+                        'total_products' => 0,
+                        'low_stock_products' => 0,
+                        'expiring_products' => 0,
+                        'total_value' => 0
+                    ],
+                    'recent_activity' => [],
+                    'error' => 'Las tablas de inventario no están creadas. Por favor ejecute las migraciones.'
+                ]);
+            }
 
-        $stats = [
-            'total_products' => InventoryProduct::count(),
-            'low_stock_products' => InventoryProduct::lowStock()->count(),
-            'expiring_products' => InventoryProduct::expiringSoon()->count(),
-            'total_value' => InventoryProduct::sum(DB::raw('current_stock * unit_price'))
-        ];
+            $products = InventoryProduct::with('movements')
+                ->orderBy('name')
+                ->paginate(15);
 
-        // Actividad reciente de ejemplo
-        $recent_activity = [
-            [
-                'title' => 'Actualización de Inventario',
-                'description' => 'Se actualizó el inventario de productos',
-                'time' => 'Hace 1 hora',
-            ],
-            [
-                'title' => 'Nuevo Producto',
-                'description' => 'Se agregó un nuevo producto al inventario',
-                'time' => 'Hace 2 horas',
-            ],
-            [
-                'title' => 'Stock Bajo',
-                'description' => 'El producto X está por debajo del stock mínimo',
-                'time' => 'Hace 3 horas',
-            ],
-        ];
+            $stats = [
+                'total_products' => InventoryProduct::count(),
+                'low_stock_products' => InventoryProduct::lowStock()->count(),
+                'expiring_products' => InventoryProduct::expiringSoon()->count(),
+                'total_value' => InventoryProduct::sum(DB::raw('current_stock * unit_price'))
+            ];
 
-        return view('avicontrol::admin.inventory.index', compact('products', 'stats', 'recent_activity'));
+            // Actividad reciente de ejemplo
+            $recent_activity = [
+                [
+                    'title' => 'Actualización de Inventario',
+                    'description' => 'Se actualizó el inventario de productos',
+                    'time' => 'Hace 1 hora',
+                ],
+                [
+                    'title' => 'Nuevo Producto',
+                    'description' => 'Se agregó un nuevo producto al inventario',
+                    'time' => 'Hace 2 horas',
+                ],
+                [
+                    'title' => 'Stock Bajo',
+                    'description' => 'El producto X está por debajo del stock mínimo',
+                    'time' => 'Hace 3 horas',
+                ],
+            ];
+
+            return view('avicontrol::admin.inventory.index', compact('products', 'stats', 'recent_activity'));
+        } catch (\Exception $e) {
+            return view('avicontrol::admin.inventory.index', [
+                'products' => collect([]),
+                'stats' => [
+                    'total_products' => 0,
+                    'low_stock_products' => 0,
+                    'expiring_products' => 0,
+                    'total_value' => 0
+                ],
+                'recent_activity' => [],
+                'error' => 'Error al cargar el inventario: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**

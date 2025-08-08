@@ -15,6 +15,7 @@ class Bird extends Model
         'poultry_facility_id',
         'galpon_id', // Asegúrate de incluir esto si usarás la relación
         'batch_code',
+        'batch_name',
         'bird_type',
         'quantity',
         'initial_quantity',
@@ -23,6 +24,9 @@ class Bird extends Model
         'breed',
         'average_weight',
         'status',
+        'mortality_rate',
+        'feed_consumption',
+        'laying_rate',
         'notes',
         'purchase_price',
         'supplier'
@@ -38,7 +42,10 @@ class Bird extends Model
     protected $casts = [
         'entry_date' => 'date',
         'average_weight' => 'decimal:2',
-        'purchase_price' => 'decimal:2'
+        'purchase_price' => 'decimal:2',
+        'mortality_rate' => 'decimal:2',
+        'feed_consumption' => 'decimal:2',
+        'laying_rate' => 'decimal:2'
     ];
 
     // Relación principal con el galpón (poultry_facility_id)

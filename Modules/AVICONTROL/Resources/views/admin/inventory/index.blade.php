@@ -4,6 +4,20 @@
 
 @section('content')
 <div class="container-fluid">
+    <!-- Mensaje de error si las tablas no existen -->
+    @if(isset($error))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>⚠️ Advertencia:</strong> {{ $error }}
+            <br><br>
+            <strong>Para solucionar esto:</strong>
+            <ol>
+                <li>Ejecute el comando: <code>php artisan migrate --path=Modules/AVICONTROL/Database/Migrations</code></li>
+                <li>O ejecute: <code>php artisan avicontrol:install-costos</code></li>
+            </ol>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    
     <div class="row">
         <!-- Contenido principal (izquierda) -->
         <div class="col-lg-9">
@@ -221,6 +235,13 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Paginación -->
+                    @if($products instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                        <div class="d-flex justify-content-center mt-3">
+                            {{ $products->appends(request()->query())->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

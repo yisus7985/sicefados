@@ -28,6 +28,20 @@
 
 @section('content')
 <div class="container-fluid">
+    <!-- Mensaje de error si las tablas no existen -->
+    @if(isset($error))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>⚠️ Advertencia:</strong> {{ $error }}
+            <br><br>
+            <strong>Para solucionar esto:</strong>
+            <ol>
+                <li>Ejecute el comando: <code>php artisan migrate --path=Modules/AVICONTROL/Database/Migrations</code></li>
+                <li>O ejecute: <code>php artisan avicontrol:install-costos</code></li>
+            </ol>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    
     <div class="row">
         <div class="col-12">
             <div class="card mb-4 shadow-sm">

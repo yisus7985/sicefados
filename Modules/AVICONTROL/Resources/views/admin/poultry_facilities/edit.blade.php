@@ -385,10 +385,6 @@
                 <i class="fas fa-clipboard-check"></i>
                 <span>Regulations</span>
             </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-users"></i>
-                <span>Users</span>
-            </a>
             
             <div class="menu-header">Account</div>
             <a href="#" class="menu-item">

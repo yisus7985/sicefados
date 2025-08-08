@@ -25,7 +25,11 @@ class AVICONTROLController extends Controller
 
     public function admin()
     {
-        return view('avicontrol::admin.welcome');
+        // Obtener alertas dinámicas para el dashboard
+        $alertController = new \Modules\AVICONTROL\Http\Controllers\AlertController();
+        $dashboardAlerts = $alertController->getDashboardAlerts();
+        
+        return view('avicontrol::admin.welcome', compact('dashboardAlerts'));
     }
 
     public function create()

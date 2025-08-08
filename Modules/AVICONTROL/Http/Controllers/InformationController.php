@@ -11,8 +11,23 @@ class InformationController extends Controller
 {
     public function index()
     {
-        $galpones = PoultryFacility::all();
-        return view('avicontrol::admin.information.index', compact('galpones'));
+        try {
+            // Verificar si las tablas existen
+            if (!\Schema::hasTable('avicontrol_poultry_facilities')) {
+                return view('avicontrol::admin.information.index', [
+                    'galpones' => collect([]),
+                    'error' => 'Las tablas de instalaciones no están creadas. Por favor ejecute las migraciones.'
+                ]);
+            }
+
+            $galpones = PoultryFacility::all();
+            return view('avicontrol::admin.information.index', compact('galpones'));
+        } catch (\Exception $e) {
+            return view('avicontrol::admin.information.index', [
+                'galpones' => collect([]),
+                'error' => 'Error al cargar los informes: ' . $e->getMessage()
+            ]);
+        }
     }
 
     public function show($id)

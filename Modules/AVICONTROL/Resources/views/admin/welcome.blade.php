@@ -554,7 +554,7 @@
             </a>
             
             <div class="menu-header">Módulos</div>
-            <a href="#" class="menu-item">
+            <a href="{{ route('avicontrol.admin.inventory.index') }}" class="menu-item">
                 <i class="fas fa-warehouse"></i>
                 <span>Inventario</span>
             </a>
@@ -562,9 +562,9 @@
                 <i class="fas fa-egg"></i>
                 <span>Producción</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="{{ route('avicontrol.admin.production_costs.index') }}" class="menu-item">
                 <i class="fas fa-calculator"></i>
-                <span>Costos</span>
+                <span>Costos de Producción</span>
             </a>
             <a href="{{ route('avicontrol.admin.information.index') }}" class="menu-item">
                 <i class="fas fa-chart-bar"></i>
@@ -580,7 +580,7 @@
                 <i class="fas fa-dove"></i>
                 <span>Gestión de Aves</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="{{ route('avicontrol.admin.alerts.index') }}" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span>Alertas</span>
             </a>
@@ -588,20 +588,19 @@
                 <i class="fas fa-clipboard-check"></i>
                 <span>Normativas</span>
             </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-users"></i>
-                <span>Usuarios</span>
-            </a>
             
             <div class="menu-header">Cuenta</div>
             <a href="#" class="menu-item">
                 <i class="fas fa-user-cog"></i>
                 <span>Perfil</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="{{ route('avicontrol.admin.logout') }}" class="menu-item" onclick="event.preventDefault(); document.getElementById('logout-form-welcome').submit();">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Cerrar Sesión</span>
             </a>
+            <form id="logout-form-welcome" action="{{ route('avicontrol.admin.logout') }}" method="POST" class="d-none">
+                @csrf
+            </form>
         </div>
     </div>
     
@@ -653,7 +652,7 @@
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>3</h3>
+                    <h3>{{ count($dashboardAlerts) }}</h3>
                     <p>Alertas Pendientes</p>
                 </div>
             </div>
@@ -808,50 +807,36 @@
             <div class="card-header">
                 <h5 class="card-title">Alertas del Sistema</h5>
                 <div>
-                    <button class="btn btn-custom-outline btn-sm">
+                    <a href="{{ route('avicontrol.admin.alerts.index') }}" class="btn btn-custom-outline btn-sm">
                         Gestionar Alertas
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="card-body">
-                <div class="alert-item">
-                    <div class="alert-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
+                @if(count($dashboardAlerts) > 0)
+                    @foreach($dashboardAlerts as $alert)
+                        <div class="alert-item">
+                            <div class="alert-icon">
+                                <i class="fas {{ $alert['icon'] }} text-{{ $alert['color'] }}"></i>
+                            </div>
+                            <div class="alert-info">
+                                <h5 class="alert-title">{{ $alert['title'] }}</h5>
+                                <p class="alert-description">{{ $alert['message'] }}</p>
+                            </div>
+                            <div class="alert-action">
+                                <a href="{{ route('avicontrol.admin.alerts.index') }}" class="btn btn-custom btn-sm">
+                                    Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle text-success fa-2x mb-3"></i>
+                        <h6 class="text-muted">No hay alertas activas</h6>
+                        <p class="text-muted mb-0">El sistema está funcionando correctamente</p>
                     </div>
-                    <div class="alert-info">
-                        <h5 class="alert-title">Stock Bajo: Alimento para Aves</h5>
-                        <p class="alert-description">El nivel de stock está por debajo del umbral mínimo configurado.</p>
-                    </div>
-                    <div class="alert-action">
-                        <button class="btn btn-custom btn-sm">Resolver</button>
-                    </div>
-                </div>
-                
-                <div class="alert-item">
-                    <div class="alert-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="alert-info">
-                        <h5 class="alert-title">Normativa Pendiente: Inspección Sanitaria</h5>
-                        <p class="alert-description">La inspección sanitaria mensual está pendiente de realización.</p>
-                    </div>
-                    <div class="alert-action">
-                        <button class="btn btn-custom btn-sm">Resolver</button>
-                    </div>
-                </div>
-                
-                <div class="alert-item">
-                    <div class="alert-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="alert-info">
-                        <h5 class="alert-title">Caída en Producción: Instalación #4</h5>
-                        <p class="alert-description">La producción ha caído un 15% respecto a la semana anterior.</p>
-                    </div>
-                    <div class="alert-action">
-                        <button class="btn btn-custom btn-sm">Resolver</button>
-                    </div>
-                </div>
+                @endif
             </div>
         </div>
         
@@ -984,6 +969,24 @@
                 });
             }, 300);
         });
+        
+        // Función para actualizar el contador de alertas
+        function updateAlertCount() {
+            fetch('{{ route("avicontrol.admin.alerts.stats") }}')
+                .then(response => response.json())
+                .then(data => {
+                    const alertCountElement = document.querySelector('.stat-card .stat-info h3');
+                    if (alertCountElement) {
+                        alertCountElement.textContent = data.total_alerts;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al actualizar contador de alertas:', error);
+                });
+        }
+        
+        // Actualizar contador cada 30 segundos
+        setInterval(updateAlertCount, 30000);
     </script>
 </body>
 </html>
