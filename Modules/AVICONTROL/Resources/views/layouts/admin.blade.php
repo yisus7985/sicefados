@@ -213,7 +213,7 @@
 </head>
 <body>
     @php
-        $isInventoryOrInformation = request()->routeIs('avicontrol.admin.inventory.*') || request()->routeIs('avicontrol.admin.information.*') || request()->routeIs('avicontrol.admin.production_costs.*') || request()->routeIs('avicontrol.admin.poultry_facilities.*') || request()->routeIs('avicontrol.admin.birds.*') || request()->routeIs('avicontrol.admin.alerts.*');
+        $isInventoryOrInformation = request()->routeIs('avicontrol.admin.inventory.*') || request()->routeIs('avicontrol.admin.information.*') || request()->routeIs('avicontrol.admin.production_costs.*') || request()->routeIs('avicontrol.admin.poultry_facilities.*') || request()->routeIs('avicontrol.admin.birds.*') || request()->routeIs('avicontrol.admin.alerts.*') || request()->routeIs('avicontrol.admin.food.*') || request()->routeIs('avicontrol.admin.food_consumption.*') || request()->routeIs('avicontrol.admin.food_conversion.*') || request()->routeIs('avicontrol.admin.food_waste.*');
     @endphp
     @if($isInventoryOrInformation)
         <style>
@@ -293,8 +293,65 @@
                 transition: all 0.3s ease;
             }
             @media (max-width: 991px) {
-                .sidebar { width: 100vw; position: relative; height: auto; }
-                .content-wrapper { margin-left: 0; }
+                .sidebar { 
+                    width: 280px; 
+                    position: fixed; 
+                    height: 100vh; 
+                    transform: translateX(-100%);
+                    transition: transform 0.3s ease;
+                }
+                .sidebar.expanded {
+                    transform: translateX(0);
+                }
+                .content-wrapper { 
+                    margin-left: 0; 
+                    padding: 15px;
+                }
+            }
+            
+            /* Estilos para el dropdown de Alimentación */
+            .dropdown {
+                cursor: pointer;
+                position: relative;
+                user-select: none;
+            }
+            
+            .dropdown:hover {
+                background-color: rgba(255,255,255,0.1);
+            }
+            
+            .dropdown-arrow {
+                transition: transform 0.3s ease;
+                margin-left: auto;
+                font-size: 0.8rem;
+            }
+            
+            .dropdown.active .dropdown-arrow {
+                transform: rotate(180deg);
+            }
+            
+            .submenu {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.4s ease;
+                background-color: rgba(255,255,255,0.05);
+                border-left: 3px solid transparent;
+            }
+            
+            .submenu.show {
+                max-height: 250px;
+            }
+            
+            .submenu .menu-item {
+                padding-left: 35px;
+                font-size: 0.9rem;
+                opacity: 0.9;
+                transition: all 0.3s ease;
+            }
+            
+            .submenu .menu-item:hover {
+                opacity: 1;
+                background-color: rgba(255,255,255,0.1);
             }
         </style>
         <div class="sidebar" id="sidebar">
@@ -315,10 +372,30 @@
                     <i class="fas fa-boxes"></i>
                     <span>Inventario</span>
                 </a>
-                <a href="#" class="menu-item">
+                <!-- Módulo de Producción - Deshabilitado temporalmente (en desarrollo por otro equipo) -->
+                <a href="#" class="menu-item" style="opacity: 0.5; cursor: not-allowed;" title="En desarrollo por otro equipo">
                     <i class="fas fa-egg"></i>
                     <span>Producción</span>
                 </a>
+                                               <div class="menu-item dropdown {{ request()->routeIs('avicontrol.admin.food.*') ? 'active' : '' }}" id="alimentacion-dropdown" style="cursor: pointer;">
+                        <i class="fas fa-utensils"></i>
+                        <span>Alimentación</span>
+                        <i class="fas fa-chevron-down ms-auto dropdown-arrow"></i>
+                    </div>
+                    <div class="submenu {{ request()->routeIs('avicontrol.admin.food.*') ? 'show' : '' }}" id="alimentacion-submenu">
+                        <a href="{{ route('avicontrol.admin.food_consumption.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.food_consumption.*') ? 'active' : '' }}" style="padding-left: 35px;">
+                            <i class="fas fa-weight"></i>
+                            <span>Consumo de Alimento</span>
+                        </a>
+                        <a href="{{ route('avicontrol.admin.food_conversion.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.food_conversion.*') ? 'active' : '' }}" style="padding-left: 35px;">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>Conversión Alimenticia</span>
+                        </a>
+                        <a href="{{ route('avicontrol.admin.food_waste.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.food_waste.*') ? 'active' : '' }}" style="padding-left: 35px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Control de Mermas</span>
+                        </a>
+                    </div>
                 <a href="{{ route('avicontrol.admin.production_costs.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.production_costs.*') ? 'active' : '' }}">
                     <i class="fas fa-calculator"></i>
                     <span>Costos de Producción</span>
@@ -340,12 +417,14 @@
                     <i class="fas fa-bell"></i>
                     <span>Alertas</span>
                 </a>
-                <a href="#" class="menu-item">
+                <!-- Módulo de Normativas - Deshabilitado temporalmente (en desarrollo por otro equipo) -->
+                <a href="#" class="menu-item" style="opacity: 0.5; cursor: not-allowed;" title="En desarrollo por otro equipo">
                     <i class="fas fa-clipboard-check"></i>
                     <span>Normativas</span>
                 </a>
                 <div class="menu-header">CUENTA</div>
-                <a href="#" class="menu-item">
+                <!-- Módulo de Perfil - Deshabilitado temporalmente (en desarrollo por otro equipo) -->
+                <a href="#" class="menu-item" style="opacity: 0.5; cursor: not-allowed;" title="En desarrollo por otro equipo">
                     <i class="fas fa-user-cog"></i>
                     <span>Perfil</span>
                 </a>
@@ -359,6 +438,12 @@
             </div>
         </div>
         <div class="content-wrapper">
+            <!-- Botón de toggle para móviles -->
+            <div class="d-lg-none mb-3">
+                <button class="btn btn-primary" id="sidebarToggle">
+                    <i class="fas fa-bars"></i> Menú
+                </button>
+            </div>
             @yield('content')
         </div>
     @else
@@ -384,6 +469,11 @@
                                 <i class="fas fa-boxes me-1"></i> Inventario
                             </a>
                         </li>
+                                                 <li class="nav-item">
+                             <a class="nav-link" href="{{ route('avicontrol.admin.food.dashboard') }}">
+                                 <i class="fas fa-utensils me-1"></i> Alimentación
+                             </a>
+                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('avicontrol.admin.poultry_facilities.index') }}">
                                 <i class="fas fa-warehouse me-1"></i> Instalaciones
@@ -483,6 +573,62 @@
     
     <!-- jQuery (if needed) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- JavaScript para el dropdown de Alimentación -->
+    <script>
+        $(document).ready(function() {
+            // Funcionalidad del dropdown de Alimentación
+            $('#alimentacion-dropdown').click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                var $dropdown = $(this);
+                var $submenu = $('#alimentacion-submenu');
+                
+                // Toggle del dropdown con animación
+                if ($dropdown.hasClass('active')) {
+                    // Cerrar el dropdown
+                    $dropdown.removeClass('active');
+                    $submenu.removeClass('show');
+                } else {
+                    // Abrir el dropdown
+                    $dropdown.addClass('active');
+                    $submenu.addClass('show');
+                }
+            });
+            
+            // Si estamos en una página de alimentación, mantener el dropdown abierto inicialmente
+            if (window.location.href.includes('food_consumption') || window.location.href.includes('food_conversion') || window.location.href.includes('food_waste')) {
+                $('#alimentacion-dropdown').addClass('active');
+                $('#alimentacion-submenu').addClass('show');
+            }
+            
+            // Cerrar dropdown si se hace clic fuera de él
+            $(document).click(function(e) {
+                if (!$(e.target).closest('#alimentacion-dropdown, #alimentacion-submenu').length) {
+                    $('#alimentacion-dropdown').removeClass('active');
+                    $('#alimentacion-submenu').removeClass('show');
+                }
+            });
+            
+            // Asegurar que el sidebar esté visible en dispositivos móviles
+            if (window.innerWidth <= 991) {
+                $('.sidebar').addClass('expanded');
+            }
+            
+            // Funcionalidad del botón de toggle para móviles
+            $('#sidebarToggle').click(function() {
+                $('.sidebar').toggleClass('expanded');
+            });
+            
+            // Cerrar sidebar al hacer clic en un enlace en móviles
+            $('.sidebar .menu-item').click(function() {
+                if (window.innerWidth <= 991) {
+                    $('.sidebar').removeClass('expanded');
+                }
+            });
+        });
+    </script>
     
     @stack('scripts')
 </body>

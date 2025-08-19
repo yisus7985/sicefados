@@ -10,6 +10,9 @@ use Modules\AVICONTROL\Http\Controllers\PoultryFacilityController;
 use Modules\AVICONTROL\Http\Controllers\ProductionCostController;
 use Modules\AVICONTROL\Http\Controllers\ProfitabilityAnalysisController;
 use Modules\AVICONTROL\Http\Controllers\AlertController;
+use Modules\AVICONTROL\Http\Controllers\FoodConsumptionController;
+use Modules\AVICONTROL\Http\Controllers\FoodConversionController;
+use Modules\AVICONTROL\Http\Controllers\FoodWasteController;
 
 Route::middleware(['web', 'lang'])->group(function () {
 
@@ -130,6 +133,73 @@ Route::middleware(['web', 'lang'])->group(function () {
             Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
             Route::post('alerts/mark-read', [AlertController::class, 'markAsRead'])->name('alerts.mark_read');
             Route::get('alerts/stats', [AlertController::class, 'getStats'])->name('alerts.stats');
+
+            // ✅ Rutas para consumo de alimento (RF-010)
+            Route::get('food_consumption', [FoodConsumptionController::class, 'index'])->name('food_consumption.index');
+            Route::get('food_consumption/create', [FoodConsumptionController::class, 'create'])->name('food_consumption.create');
+            Route::post('food_consumption', [FoodConsumptionController::class, 'store'])->name('food_consumption.store');
+            Route::get('food_consumption/{id}', [FoodConsumptionController::class, 'show'])->name('food_consumption.show');
+            Route::get('food_consumption/{id}/edit', [FoodConsumptionController::class, 'edit'])->name('food_consumption.edit');
+            Route::put('food_consumption/{id}', [FoodConsumptionController::class, 'update'])->name('food_consumption.update');
+            Route::delete('food_consumption/{id}', [FoodConsumptionController::class, 'destroy'])->name('food_consumption.destroy');
+            Route::get('food_consumption/estadisticas', [FoodConsumptionController::class, 'estadisticas'])->name('food_consumption.estadisticas');
+            Route::post('food_consumption/exportar', [FoodConsumptionController::class, 'exportar'])->name('food_consumption.exportar');
+
+            // ✅ Rutas para conversión alimenticia (RF-011)
+            Route::get('food_conversion', [FoodConversionController::class, 'index'])->name('food_conversion.index');
+            Route::get('food_conversion/create', [FoodConversionController::class, 'create'])->name('food_conversion.create');
+            Route::post('food_conversion', [FoodConversionController::class, 'store'])->name('food_conversion.store');
+            Route::post('food_conversion/calcular-automaticamente', [FoodConversionController::class, 'calcularAutomaticamente'])->name('food_conversion.calcular_automaticamente');
+            Route::get('food_conversion/reporte', [FoodConversionController::class, 'reporte'])->name('food_conversion.reporte');
+            Route::get('food_conversion/estadisticas', [FoodConversionController::class, 'estadisticas'])->name('food_conversion.estadisticas');
+        Route::get('food_conversion/test-chart', function() {
+            return view('avicontrol::admin.food_conversion.test_chart');
+        })->name('food_conversion.test_chart');
+        Route::get('food_conversion/estadisticas-simple', function() {
+            return view('avicontrol::admin.food_conversion.estadisticas_simple');
+        })->name('food_conversion.estadisticas_simple');
+            Route::post('food_conversion/exportar', [FoodConversionController::class, 'exportar'])->name('food_conversion.exportar');
+            Route::get('food_conversion/{id}', [FoodConversionController::class, 'show'])->name('food_conversion.show');
+            Route::get('food_conversion/{id}/edit', [FoodConversionController::class, 'edit'])->name('food_conversion.edit');
+            Route::put('food_conversion/{id}', [FoodConversionController::class, 'update'])->name('food_conversion.update');
+            Route::delete('food_conversion/{id}', [FoodConversionController::class, 'destroy'])->name('food_conversion.destroy');
+
+            // ✅ Rutas para control de mermas (RF-012)
+            Route::get('food_waste', [FoodWasteController::class, 'index'])->name('food_waste.index');
+            Route::get('food_waste/create', [FoodWasteController::class, 'create'])->name('food_waste.create');
+            Route::post('food_waste', [FoodWasteController::class, 'store'])->name('food_waste.store');
+            Route::get('food_waste/{id}', [FoodWasteController::class, 'show'])->name('food_waste.show');
+            Route::get('food_waste/{id}/edit', [FoodWasteController::class, 'edit'])->name('food_waste.edit');
+            Route::put('food_waste/{id}', [FoodWasteController::class, 'update'])->name('food_waste.update');
+            Route::delete('food_waste/{id}', [FoodWasteController::class, 'destroy'])->name('food_waste.destroy');
+            Route::get('food_waste/reporte', [FoodWasteController::class, 'reporte'])->name('food_waste.reporte');
+            Route::get('food_waste/estadisticas', [FoodWasteController::class, 'estadisticas'])->name('food_waste.estadisticas');
+            
+            // SOLUCIÓN DEFINITIVA - Ruta directa para estadísticas
+            Route::get('food_waste/estadisticas-directo', function() {
+                return response()->file(public_path('estadisticas_mermas.html'));
+            })->name('food_waste.estadisticas_directo');
+            
+            Route::get('food_waste/estadisticas-fix', function() {
+                return view('avicontrol::admin.food_waste.estadisticas');
+            })->name('food_waste.estadisticas_fix');
+            Route::get('food_waste/estadisticas-independiente', function() {
+                return view('avicontrol::admin.food_waste.estadisticas_independiente');
+            })->name('food_waste.estadisticas_independiente');
+            Route::get('food_waste/test-chart', function() {
+                return view('avicontrol::admin.food_waste.test_chart');
+            })->name('food_waste.test_chart');
+            Route::get('food_waste/estadisticas-simple', function() {
+                return view('avicontrol::admin.food_waste.estadisticas_simple');
+            })->name('food_waste.estadisticas_simple');
+            Route::get('food_waste/test-html', function() {
+                return response()->file('Modules/AVICONTROL/Resources/views/admin/food_waste/test_html.html');
+            })->name('food_waste.test_html');
+            Route::post('food_waste/exportar', [FoodWasteController::class, 'exportar'])->name('food_waste.exportar');
+            Route::get('food_waste/dashboard', [FoodWasteController::class, 'dashboard'])->name('food_waste.dashboard');
+            
+            // Dashboard principal del módulo de alimentación
+            Route::get('food/dashboard', [FoodWasteController::class, 'dashboard'])->name('food.dashboard');
 
         });
 

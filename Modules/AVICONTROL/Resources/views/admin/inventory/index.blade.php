@@ -287,7 +287,7 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
     // Search functionality
     document.getElementById('searchInput').addEventListener('keyup', function() {
@@ -312,10 +312,26 @@
 
     // Delete product function
     function deleteProduct(productId) {
-        const modal = document.getElementById('deleteModal');
-        const form = document.getElementById('deleteForm');
-        form.action = `/avicontrol/admin/inventory/${productId}`;
-        $(modal).modal('show');
+        if (confirm('¿Está seguro de que desea eliminar este producto?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/avicontrol/admin/inventory/${productId}`;
+            
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = '{{ csrf_token() }}';
+            
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            
+            form.appendChild(csrfToken);
+            form.appendChild(methodField);
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 
     // Auto-hide alerts
@@ -323,4 +339,4 @@
         $('.alert').fadeOut('slow');
     }, 5000);
 </script>
-@endpush 
+@endsection 

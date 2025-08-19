@@ -194,11 +194,11 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 $(document).ready(function() {
     // Inicializar tooltips
     $('[data-toggle="tooltip"]').tooltip();
 });
 </script>
-@endpush 
+@endsection 

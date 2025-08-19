@@ -13,7 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Registrar el módulo AVICONTROL
+        $this->app->register(\Modules\AVICONTROL\Providers\AVICONTROLServiceProvider::class);
     }
 
     /**
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // Cargar el módulo AVICONTROL
+        $this->app->register(\Modules\AVICONTROL\Providers\AVICONTROLServiceProvider::class);
     }
 }

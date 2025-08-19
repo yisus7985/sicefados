@@ -285,7 +285,7 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 let currentAlertIndex = null;
 
@@ -564,4 +564,4 @@ function showNotification(message, type) {
 // Auto-refresh cada 5 minutos
 setInterval(refreshAlerts, 300000);
 </script>
-@endpush 
+@endsection 

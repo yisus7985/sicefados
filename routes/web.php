@@ -13,6 +13,15 @@ Route::get('/user/register/', [UserController::class, 'user_register'])->name('c
 Route::get('/user/register/searchperson', [UserController::class, 'user_search_person'])->name('cefa.user.register.searchperson');
 Route::post('/user/register/store', [UserController::class, 'user_register_store'])->name('cefa.user.register.store');
 
+// RUTAS SIN MIDDLEWARE - ACCESO DIRECTO
+Route::get('/estadisticas-mermas-directo', function() {
+    return response()->file(public_path('estadisticas_mermas.html'));
+})->name('estadisticas.mermas.directo');
+
+Route::get('/mermas-estadisticas-directo', function() {
+    return response()->file(public_path('estadisticas_mermas.html'));
+})->name('mermas.estadisticas.directo');
+
 Route::middleware(['lang'])->group(function(){
 
     Auth::routes();
@@ -61,6 +70,44 @@ Route::middleware(['lang'])->group(function(){
         return response()->json(['status' => 'inactive'], 403);
     });
     
+    // SOLUCIÓN DEFINITIVA - Rutas simples para AVICONTROL
+    Route::prefix('avicontrol/admin')->group(function () {
+        // Estadísticas de mermas
+        Route::get('/food_waste/estadisticas', [App\Http\Controllers\EstadisticasController::class, 'mermas'])
+            ->name('avicontrol.admin.food_waste.estadisticas');
+        
+        // Reporte de mermas
+        Route::get('/food_waste/reporte', [App\Http\Controllers\EstadisticasController::class, 'reporte'])
+            ->name('avicontrol.admin.food_waste.reporte');
+    });
+
+    // RUTAS ALTERNATIVAS - Acceso directo
+    Route::get('/estadisticas-mermas', [App\Http\Controllers\EstadisticasController::class, 'mermas'])
+        ->name('estadisticas.mermas.directo');
+    
+    Route::get('/reporte-mermas', [App\Http\Controllers\EstadisticasController::class, 'reporte'])
+        ->name('reporte.mermas.directo');
+
+    // RUTAS ALTERNATIVAS - Acceso directo
+    Route::get('/estadisticas-mermas', [App\Http\Controllers\EstadisticasController::class, 'mermas'])
+        ->name('estadisticas.mermas.directo');
+    
+    Route::get('/reporte-mermas', [App\Http\Controllers\EstadisticasController::class, 'reporte'])
+        ->name('reporte.mermas.directo');
+
+    // SOLUCIÓN ALTERNATIVA - Ruta fuera del middleware
+    Route::get('/estadisticas-mermas', function() {
+        return response()->file('public/estadisticas_mermas.html');
+    })->name('estadisticas.mermas');
+
+    // SOLUCIÓN DEFINITIVA - Ruta completamente independiente
+    Route::get('/mermas-estadisticas', function() {
+        return response()->file(public_path('estadisticas_mermas.html'));
+    })->name('mermas.estadisticas');
+
+    // SOLUCIÓN CON CONTROLADOR
+    Route::get('/estadisticas-mermas-controller', [App\Http\Controllers\EstadisticasController::class, 'mermas'])
+        ->name('estadisticas.mermas.controller');
 
 });
 

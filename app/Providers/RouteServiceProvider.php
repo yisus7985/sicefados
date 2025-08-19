@@ -46,6 +46,15 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/web.php'));
+
+            // Rutas de estadísticas - SIN MIDDLEWARE
+            Route::group([], base_path('routes/estadisticas.php'));
+            
+            // Rutas de AVICONTROL - SIN MIDDLEWARE
+            Route::group([], base_path('routes/avicontrol.php'));
+            
+            // RUTAS DE AVICONTROL - SIN MIDDLEWARE
+            Route::group([], base_path('routes/avicontrol.php'));
         });
     }
 

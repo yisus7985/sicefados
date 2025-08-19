@@ -385,6 +385,11 @@
             color: var(--info);
         }
         
+        .module-icon.secondary {
+            background-color: rgba(180, 83, 9, 0.1);
+            color: var(--secondary);
+        }
+        
         .module-title {
             font-size: 1.2rem;
             margin: 0 0 10px;
@@ -561,6 +566,10 @@
             <a href="#" class="menu-item">
                 <i class="fas fa-egg"></i>
                 <span>Producción</span>
+            </a>
+                   <a href="{{ route('avicontrol.admin.food.dashboard') }}" class="menu-item">
+           <i class="fas fa-utensils"></i>
+           <span>Alimentación</span>
             </a>
             <a href="{{ route('avicontrol.admin.production_costs.index') }}" class="menu-item">
                 <i class="fas fa-calculator"></i>
@@ -859,6 +868,15 @@
                 <h3 class="module-title">Producción</h3>
                 <p class="module-description">Registro y seguimiento de parámetros de producción diaria.</p>
                 <button class="btn btn-custom">Acceder</button>
+            </div>
+            
+            <div class="module-card">
+                <div class="module-icon secondary">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                                 <h3 class="module-title">Alimentación</h3>
+                 <p class="module-description">Control de consumo, conversión alimenticia y mermas de alimento.</p>
+                 <a href="{{ route('avicontrol.admin.food.dashboard') }}" class="btn btn-custom">Acceder</a>
             </div>
             
             <div class="module-card">

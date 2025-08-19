@@ -47,7 +47,7 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapWebRoutes()
     {
-        Route::middleware('web')
+        Route::middleware(['web', 'lang'])
             ->group(module_path('AVICONTROL', '/Routes/web.php'));
     }
 
