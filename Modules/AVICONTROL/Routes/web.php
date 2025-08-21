@@ -81,6 +81,14 @@ Route::middleware(['web', 'lang'])->group(function () {
             // Endpoint para exportar PDF de informes
             Route::post('information/export-pdf', [InformationController::class, 'exportPdf'])->name('information.export_pdf');
 
+            // Rutas para PDF de inventario de productos
+            Route::get('information/inventory/pdf/all', [InformationController::class, 'downloadAllProductsPDF'])->name('information.pdf.all');
+            Route::get('information/inventory/pdf/by-date', [InformationController::class, 'downloadProductsByDatePDF'])->name('information.pdf.by_date');
+            Route::get('information/inventory/pdf/product/{id}', [InformationController::class, 'downloadProductPDF'])->name('information.pdf.product');
+            Route::get('information/pdf/galpon/{id}', [InformationController::class, 'downloadGalponPDF'])->name('information.pdf.galpon');
+            Route::get('information/pdf/all-galpones', [InformationController::class, 'downloadAllGalponesPDF'])->name('information.pdf.all_galpones');
+            Route::get('information/pdf/galpones-by-date', [InformationController::class, 'downloadGalponesByDatePDF'])->name('information.pdf.galpones_by_date');
+
             // ✅ Rutas para inventario
             Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
             Route::get('inventory/create', [InventoryController::class, 'create'])->name('inventory.create');

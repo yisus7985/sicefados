@@ -244,7 +244,7 @@ return [
         'DataTables' => Yajra\DataTables\Facades\DataTables::class,
         'Input' => Illuminate\Support\Facades\Input::class,
         'Image' => Intervention\Image\Facades\Image::class, // composer require intervention/image
-        'PDF' => Dompdf\Facade::class,
+        'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
 
     ],
 

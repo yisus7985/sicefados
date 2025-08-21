@@ -1,331 +1,283 @@
 @extends('avicontrol::layouts.admin')
 
-@section('title', 'Informes de Inventario')
-
-@push('styles')
-    {{-- Si hay estilos personalizados estrictamente necesarios, colócalos aquí --}}
-@endpush
-
-@push('scripts')
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script>
-    $(document).ready(function() {
-        $('#inventoryTable').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
-            },
-            "pageLength": 10,
-            "order": [[ 0, "asc" ]], // Ordenar por código de lote ascendente
-            "columnDefs": [
-                { "orderable": false, "targets": 6 } // Deshabilitar ordenamiento en columna de acciones
-            ]
-        });
-    });
-</script>
-@endpush
+@section('title', 'Informe de Inventario - AVICONTROL')
 
 @section('content')
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h3 class="mb-0">Informes de Inventario</h3>
-                </div>
-            </div>
+    <!-- Mensaje de error si las tablas no existen -->
+    @if(isset($error))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>⚠️ Advertencia:</strong> {{ $error }}
+            <br><br>
+            <strong>Para solucionar esto:</strong>
+            <ol>
+                <li>Ejecute el comando: <code>php artisan migrate --path=Modules/AVICONTROL/Database/Migrations</code></li>
+                <li>O ejecute: <code>php artisan avicontrol:install-costos</code></li>
+            </ol>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    </div>
-    <div class="col-lg-9">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h3 mb-0 text-gray-800">
-                    <i class="fas fa-boxes text-primary me-2"></i>
-                    Gestión de Inventario
-                </h1>
-                <p class="text-muted">Genere y consulte informes detallados del inventario de aves</p>
-            </div>
-            <div>
-                <a href="{{ route('avicontrol.admin.information.index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Volver a Informes
-                </a>
-            </div>
+    @endif
+    
+    <div class="card shadow-sm mb-2">
+    <div class="card-body p-2 d-flex flex-wrap justify-content-between align-items-center">
+        <div class="mb-1 mb-md-0">
+            <h1 class="h5 mb-0 text-gray-800">
+                <i class="fas fa-boxes text-primary me-1"></i>
+                Informe de Inventario
+            </h1>
+            <p class="text-muted small mb-0">Consulta de productos e insumos avícolas</p>
         </div>
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card border-left-success shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                    Total de Lotes
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    {{ count($birds) }}
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-dove fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-left-primary shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Total de Aves
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    {{ number_format($birds->sum('quantity')) }}
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-egg fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-left-info shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                    Lotes Activos
-                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                        @php
-                            $activosCount = $birds->where('status', 'active')->count();
-                        @endphp
-                        {{ $activosCount }}
-                    </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-left-warning shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    Valor Total
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    ${{ number_format($birds->sum(function($bird) { return $bird->quantity * ($bird->purchase_price ?: 0); }), 2) }}
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                </div>
-                </div>
-            </div>
-        </div>
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Inventario de Aves</h6>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="fas fa-filter me-1"></i> Filtrar
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="filterByStatus('all')">Todos</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="filterByStatus('active')">Activos</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="filterByStatus('sold')">Vendidos</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="filterByStatus('deceased')">Fallecidos</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="filterByStatus('transferred')">Transferidos</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered" id="inventoryTable">
-                    <thead>
-                        <tr>
-                            <th>Código Lote</th>
-                            <th>Tipo de Ave</th>
-                            <th>Raza</th>
-                            <th>Cantidad</th>
-                            <th>Estado</th>
-                            <th>Valor</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                        <tbody>
-                        @foreach($birds as $bird)
-                            <tr class="bird-row" data-status="{{ $bird->status }}">
-                                <td class="bird-code">
-                                    <strong>{{ $bird->batch_code }}</strong>
-                                </td>
-                                <td>
-                                    @switch($bird->bird_type)
-                                        @case('laying_hens')
-                                            <span class="badge bg-warning text-dark">
-                                                <i class="fas fa-egg me-1"></i> Gallinas Ponedoras
-                                            </span>
-                                            @break
-                                        @case('broilers')
-                                            <span class="badge bg-info">
-                                                <i class="fas fa-drumstick-bite me-1"></i> Pollos de Engorde
-                                            </span>
-                                            @break
-                                        @case('chicks')
-                                            <span class="badge bg-secondary">
-                                                <i class="fas fa-baby me-1"></i> Pollitos
-                                            </span>
-                                            @break
-                                        @case('breeders')
-                                            <span class="badge bg-primary">
-                                                <i class="fas fa-heart me-1"></i> Reproductores
-                                            </span>
-                                            @break
-                                        @case('roosters')
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-cocktail me-1"></i> Gallos
-                                            </span>
-                                            @break
-                                    @endswitch
-                                </td>
-                                <td>{{ $bird->breed ?: 'No especificada' }}</td>
-                                <td class="quantity-cell">
-                                    <strong class="text-success">{{ number_format($bird->quantity) }}</strong> aves
-                                </td>
-                                <td>
-                                    @switch($bird->status)
-                                        @case('active')
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check-circle me-1"></i> Activo
-                                            </span>
-                                            @break
-                                        @case('sold')
-                                            <span class="badge bg-primary">
-                                                <i class="fas fa-dollar-sign me-1"></i> Vendido
-                                            </span>
-                                            @break
-                                        @case('deceased')
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-skull me-1"></i> Fallecido
-                                            </span>
-                                            @break
-                                        @case('transferred')
-                                            <span class="badge bg-warning text-dark">
-                                                <i class="fas fa-exchange-alt me-1"></i> Transferido
-                                            </span>
-                                            @break
-                                    @endswitch
-                                </td>
-                                <td class="value-cell">
-                                    <strong class="text-primary">${{ number_format($bird->quantity * ($bird->purchase_price ?: 0), 2) }}</strong>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ route('avicontrol.admin.birds.show', $bird->id) }}" class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{{ route('avicontrol.admin.birds.edit', $bird->id) }}" class="btn btn-outline-warning btn-sm">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3">
-        <div class="card shadow mb-4">
-            <div class="card-header bg-success text-white py-3">
-                <h6 class="m-0 fw-bold"><i class="fas fa-chart-bar me-2"></i>Resumen de Inventario</h6>
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled mb-0">
-                    <li class="mb-2"><i class="fas fa-dove text-success me-2"></i> Lotes: <strong>{{ count($birds) }}</strong></li>
-                    <li class="mb-2"><i class="fas fa-chart-bar text-info me-2"></i> Activos: <strong>{{ $activosCount }}</strong></li>
-                    <li class="mb-2"><i class="fas fa-boxes text-warning me-2"></i> Total Aves: <strong>{{ number_format($birds->sum('quantity')) }}</strong></li>
-                    <li><i class="fas fa-dollar-sign text-primary me-2"></i> Valor: <strong>${{ number_format($birds->sum(function($bird) { return $bird->quantity * ($bird->purchase_price ?: 0); }), 2) }}</strong></li>
-                </ul>
-            </div>
-        </div>
-        <div class="card shadow mb-4">
-            <div class="card-header bg-light py-3">
-                <h6 class="m-0 fw-bold text-success"><i class="fas fa-chart-pie me-2"></i>Distribución por Tipo</h6>
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled mb-0">
-                    @php
-                        $typeStats = $birds->groupBy('bird_type')->map(function($group) {
-                            return [
-                                'count' => $group->count(),
-                                'quantity' => $group->sum('quantity'),
-                                'value' => $group->sum(function($bird) { return $bird->quantity * ($bird->purchase_price ?: 0); })
-                            ];
-                        });
-                    @endphp
-                    
-                    @foreach($typeStats as $type => $stats)
-                        <li class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="badge bg-primary me-2">
-                                    @switch($type)
-                                        @case('laying_hens')
-                                            <i class="fas fa-egg"></i>
-                                            @break
-                                        @case('broilers')
-                                            <i class="fas fa-drumstick-bite"></i>
-                                            @break
-                                        @case('chicks')
-                                            <i class="fas fa-baby"></i>
-                                            @break
-                                        @case('breeders')
-                                            <i class="fas fa-heart"></i>
-                                            @break
-                                        @case('roosters')
-                                            <i class="fas fa-cocktail"></i>
-                                            @break
-                                    @endswitch
-                                </span>
-                                <strong>{{ $stats['count'] }} lotes</strong>
-                            </div>
-                            <small class="text-muted">{{ number_format($stats['quantity']) }} aves - ${{ number_format($stats['value'], 2) }}</small>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+        <div>
+            <a href="{{ route('avicontrol.admin.information.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
         </div>
     </div>
 </div>
 
+<div class="row">
+    <!-- Columna Principal -->
+    <div class="col-lg-9">
+        <!-- Fila de Estadísticas -->
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-2">
+                <div class="card border-left-primary shadow-sm h-100">
+                    <div class="card-body p-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Productos</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $stats['total_products'] }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-boxes fa-lg text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-2">
+                <div class="card border-left-warning shadow-sm h-100">
+                    <div class="card-body p-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Stock Bajo</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $stats['low_stock_products'] }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-exclamation-triangle fa-lg text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-2">
+                <div class="card border-left-danger shadow-sm h-100">
+                    <div class="card-body p-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Por Vencer</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $stats['expiring_products'] }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-lg text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-2">
+                <div class="card border-left-success shadow-sm h-100">
+                    <div class="card-body p-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Valor Total</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">${{ number_format($stats['total_value'], 2) }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-dollar-sign fa-lg text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Productos -->
+        <div class="card shadow-sm">
+            <div class="card-header py-2">
+                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary mb-2 mb-md-0">Listado de Productos</h6>
+                    <div class="d-flex flex-wrap align-items-center">
+                        <input type="text" id="searchInput" class="form-control form-control-sm me-2 mb-2 mb-md-0" placeholder="Buscar..." style="max-width: 180px;">
+                        <a href="{{ route('avicontrol.admin.information.pdf.all') }}" class="btn btn-danger btn-sm me-2 mb-2 mb-md-0" data-bs-toggle="tooltip" title="Informe Completo">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                        <button class="btn btn-info btn-sm mb-2 mb-md-0" type="button" data-bs-toggle="collapse" data-bs-target="#dateFilterCollapse" aria-expanded="false" aria-controls="dateFilterCollapse" data-bs-toggle="tooltip" title="Filtrar por Fecha">
+                            <i class="fas fa-calendar-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="collapse mt-2" id="dateFilterCollapse">
+                    <form action="{{ route('avicontrol.admin.information.pdf.by_date') }}" method="GET" target="_blank">
+                        <div class="row align-items-end">
+                            <div class="col-md-4 mb-2">
+                                <label for="start_date" class="form-label form-label-sm">Desde:</label>
+                                <input type="date" id="start_date" name="start_date" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label for="end_date" class="form-label form-label-sm">Hasta:</label>
+                                <input type="date" id="end_date" name="end_date" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end mb-2">
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="fas fa-download me-1"></i> Descargar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body p-2">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover" id="productsTable" width="100%" cellspacing="0">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Stock</th>
+                                <th>Stock Mín.</th>
+                                <th>Precio</th>
+                                <th>Estado</th>
+                                <th class="text-center">PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($products as $product)
+                            <tr>
+                                <td><span class="badge bg-primary">{{ $product->code }}</span></td>
+                                <td>
+                                    <strong>{{ $product->name }}</strong>
+                                    @if($product->description)
+                                        <br><small class="text-muted">{{ Str::limit($product->description, 40) }}</small>
+                                    @endif
+                                </td>
+                                <td><span class="badge bg-info">{{ $product->category_name }}</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold">{{ $product->current_stock }} {{ $product->unit_measure }}</span>
+                                        @if($product->isLowStock())
+                                            <i class="fas fa-exclamation-triangle text-warning ms-2" data-bs-toggle="tooltip" title="Stock bajo"></i>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td>{{ $product->minimum_stock }} {{ $product->unit_measure }}</td>
+                                <td>${{ number_format($product->unit_price, 2) }}</td>
+                                <td>
+                                    @if($product->status === 'active')
+                                        <span class="badge bg-success">Activo</span>
+                                    @elseif($product->status === 'inactive')
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    @else
+                                        <span class="badge bg-danger">Vencido</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ route('avicontrol.admin.information.pdf.product', ['id' => $product->id]) }}" class="btn btn-sm btn-danger" target="_blank" data-bs-toggle="tooltip" title="Descargar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="8" class="text-center">No hay productos para mostrar.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                
+                @if($products instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                    <div class="d-flex justify-content-center mt-2">
+                        {{ $products->appends(request()->query())->links() }}
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Lateral -->
+    <div class="col-lg-3">
+        <div class="card shadow-sm mb-2">
+            <div class="card-header py-2 bg-success text-white">
+                <h6 class="m-0 fw-bold"><i class="fas fa-chart-bar me-2"></i>Resumen</h6>
+            </div>
+            <div class="card-body p-2">
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-1 d-flex justify-content-between"><span><i class="fas fa-boxes text-muted me-2"></i>Productos</span> <strong>{{ $stats['total_products'] }}</strong></li>
+                    <li class="mb-1 d-flex justify-content-between"><span><i class="fas fa-exclamation-triangle text-muted me-2"></i>Stock Bajo</span> <strong>{{ $stats['low_stock_products'] }}</strong></li>
+                    <li class="mb-1 d-flex justify-content-between"><span><i class="fas fa-clock text-muted me-2"></i>Por Vencer</span> <strong>{{ $stats['expiring_products'] }}</strong></li>
+                    <li class="d-flex justify-content-between"><span><i class="fas fa-dollar-sign text-muted me-2"></i>Valor Total</span> <strong>${{ number_format($stats['total_value'], 2) }}</strong></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-header py-2 bg-light">
+                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-history me-2"></i>Actividad Reciente</h6>
+            </div>
+            <div class="card-body p-2">
+                <ul class="list-unstyled mb-0 small">
+                    @forelse($recent_activity as $activity)
+                        <li class="mb-2">
+                            <strong class="d-block">{{ $activity['title'] }}</strong>
+                            <small class="text-muted">{{ $activity['description'] }} - {{ $activity['time'] }}</small>
+                        </li>
+                    @empty
+                        <li class="text-muted">Sin actividad reciente.</li>
+                    @endforelse
+                </ul>
+                <a href="#" class="btn btn-outline-primary btn-sm mt-2 w-100">Ver Todo</a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+@endsection
+
+@section('scripts')
 <script>
-function filterByStatus(status) {
-    const rows = document.querySelectorAll('.bird-row');
-    
-    rows.forEach(row => {
-        const rowStatus = row.getAttribute('data-status');
-        
-        if (status === 'all' || rowStatus === status) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const table = document.getElementById('productsTable');
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                
+                for (let row of rows) {
+                    const cells = row.getElementsByTagName('td');
+                    let found = false;
+                    
+                    for (let cell of cells) {
+                        if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    row.style.display = found ? '' : 'none';
+                }
+            });
+        }
+
+        // Auto-hide alerts
+        const alert = document.querySelector('.alert');
+        if(alert) {
+            setTimeout(function() {
+                alert.style.display = 'none';
+            }, 5000);
         }
     });
-    
-    // Actualizar la tabla de DataTables
-    $('#inventoryTable').DataTable().draw();
-}
 </script>
-@endsection 
+@endsection
