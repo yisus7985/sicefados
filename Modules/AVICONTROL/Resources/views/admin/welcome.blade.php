@@ -563,7 +563,7 @@
                 <i class="fas fa-warehouse"></i>
                 <span>Inventario</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="{{ route('avicontrol.admin.production.index') }}" class="menu-item">
                 <i class="fas fa-egg"></i>
                 <span>Producción</span>
             </a>
@@ -867,7 +867,7 @@
                 </div>
                 <h3 class="module-title">Producción</h3>
                 <p class="module-description">Registro y seguimiento de parámetros de producción diaria.</p>
-                <button class="btn btn-custom">Acceder</button>
+                <a href="{{ route('avicontrol.admin.production.index') }}" class="btn btn-custom">Acceder</a>
             </div>
             
             <div class="module-card">

@@ -213,7 +213,17 @@
 </head>
 <body>
     @php
-        $isInventoryOrInformation = request()->routeIs('avicontrol.admin.inventory.*') || request()->routeIs('avicontrol.admin.information.*') || request()->routeIs('avicontrol.admin.production_costs.*') || request()->routeIs('avicontrol.admin.poultry_facilities.*') || request()->routeIs('avicontrol.admin.birds.*') || request()->routeIs('avicontrol.admin.alerts.*') || request()->routeIs('avicontrol.admin.food.*') || request()->routeIs('avicontrol.admin.food_consumption.*') || request()->routeIs('avicontrol.admin.food_conversion.*') || request()->routeIs('avicontrol.admin.food_waste.*');
+        $isInventoryOrInformation = request()->routeIs('avicontrol.admin.inventory.*')
+            || request()->routeIs('avicontrol.admin.information.*')
+            || request()->routeIs('avicontrol.admin.production.*')
+            || request()->routeIs('avicontrol.admin.production_costs.*')
+            || request()->routeIs('avicontrol.admin.poultry_facilities.*')
+            || request()->routeIs('avicontrol.admin.birds.*')
+            || request()->routeIs('avicontrol.admin.alerts.*')
+            || request()->routeIs('avicontrol.admin.food.*')
+            || request()->routeIs('avicontrol.admin.food_consumption.*')
+            || request()->routeIs('avicontrol.admin.food_conversion.*')
+            || request()->routeIs('avicontrol.admin.food_waste.*');
     @endphp
     @if($isInventoryOrInformation)
         <style>
@@ -372,8 +382,7 @@
                     <i class="fas fa-boxes"></i>
                     <span>Inventario</span>
                 </a>
-                <!-- Módulo de Producción - Deshabilitado temporalmente (en desarrollo por otro equipo) -->
-                <a href="#" class="menu-item" style="opacity: 0.5; cursor: not-allowed;" title="En desarrollo por otro equipo">
+                <a href="{{ route('avicontrol.admin.production.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.production.*') ? 'active' : '' }}">
                     <i class="fas fa-egg"></i>
                     <span>Producción</span>
                 </a>

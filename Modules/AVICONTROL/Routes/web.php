@@ -13,6 +13,7 @@ use Modules\AVICONTROL\Http\Controllers\AlertController;
 use Modules\AVICONTROL\Http\Controllers\FoodConsumptionController;
 use Modules\AVICONTROL\Http\Controllers\FoodConversionController;
 use Modules\AVICONTROL\Http\Controllers\FoodWasteController;
+use Modules\AVICONTROL\Http\Controllers\ProductionController;
 
 Route::middleware(['web', 'lang'])->group(function () {
 
@@ -74,20 +75,9 @@ Route::middleware(['web', 'lang'])->group(function () {
 
             // ✅ Nuevas rutas para informes
             Route::get('information', [InformationController::class, 'index'])->name('information.index');
-            Route::get('information/inventory', [InformationController::class, 'inventory'])->name('information.inventory');
             Route::get('information/{id}', [InformationController::class, 'show'])->name('information.show');
             // Endpoint AJAX para informes filtrados
-            Route::post('information/report-data', [InformationController::class, 'getReportData'])->name('information.report_data');
-            // Endpoint para exportar PDF de informes
-            Route::post('information/export-pdf', [InformationController::class, 'exportPdf'])->name('information.export_pdf');
-
-            // Rutas para PDF de inventario de productos
-            Route::get('information/inventory/pdf/all', [InformationController::class, 'downloadAllProductsPDF'])->name('information.pdf.all');
-            Route::get('information/inventory/pdf/by-date', [InformationController::class, 'downloadProductsByDatePDF'])->name('information.pdf.by_date');
-            Route::get('information/inventory/pdf/product/{id}', [InformationController::class, 'downloadProductPDF'])->name('information.pdf.product');
-            Route::get('information/pdf/galpon/{id}', [InformationController::class, 'downloadGalponPDF'])->name('information.pdf.galpon');
-            Route::get('information/pdf/all-galpones', [InformationController::class, 'downloadAllGalponesPDF'])->name('information.pdf.all_galpones');
-            Route::get('information/pdf/galpones-by-date', [InformationController::class, 'downloadGalponesByDatePDF'])->name('information.pdf.galpones_by_date');
+   
 
             // ✅ Rutas para inventario
             Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
@@ -209,6 +199,30 @@ Route::middleware(['web', 'lang'])->group(function () {
             // Dashboard principal del módulo de alimentación
             Route::get('food/dashboard', [FoodWasteController::class, 'dashboard'])->name('food.dashboard');
 
+
+
+
+            // ... existing code ...
+
+// Routes for Production management
+Route::get('production', [ProductionController::class, 'index'])->name('production.index');
+Route::get('production/create', [ProductionController::class, 'create'])->name('production.create');
+Route::post('production', [ProductionController::class, 'store'])->name('production.store');
+Route::get('production/{id}', [ProductionController::class, 'show'])->name('production.show');
+Route::get('production/{id}/edit', [ProductionController::class, 'edit'])->name('production.edit');
+Route::put('production/{id}', [ProductionController::class, 'update'])->name('production.update');
+Route::delete('production/{id}', [ProductionController::class, 'destroy'])->name('production.destroy');
+
+// Additional Production routes for dashboard and reports
+Route::get('production/dashboard', [ProductionController::class, 'dashboard'])->name('production.dashboard');
+Route::get('production/report', [ProductionController::class, 'report'])->name('production.report');
+Route::get('production/test-pdf', [ProductionController::class, 'testPdf'])->name('production.test_pdf');
+Route::post('production/bulk-action', [ProductionController::class, 'bulkAction'])->name('production.bulk-action');
+Route::get('production/stats', [ProductionController::class, 'getStats'])->name('production.stats');
+Route::get('production/trend', [ProductionController::class, 'getTrend'])->name('production.trend');
+Route::get('production/batches-by-facility', [ProductionController::class, 'getBatchesByFacility'])->name('production.batches-by-facility');
+
+// ... existing code ...
         });
 
     });
