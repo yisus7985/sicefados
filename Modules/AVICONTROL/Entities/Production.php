@@ -14,10 +14,16 @@ class Production extends Model
     protected $table = 'avicontrol_productions';
 
     protected $fillable = [
-        // Nuevas columnas
+        // Campos básicos
         'fecha',
         'tipo',
+        'tipo_produccion',
+        'galpon_id',
         'cantidad',
+        'peso_promedio',
+        'peso_total',
+        'huevos_rotos',
+        'huevos_sucios',
         'valor_unidad',
         'valor_total',
         'destino',
@@ -27,7 +33,7 @@ class Production extends Model
         'firma_lider',
         'estado',
         
-        // Columnas antiguas
+        // Columnas antiguas (mantener para compatibilidad)
         'poultry_facility_id',
         'bird_id',
         'batch_code',
@@ -54,7 +60,9 @@ class Production extends Model
     protected $casts = [
         'fecha' => 'date',
         'valor_unidad' => 'decimal:2',
-        'valor_total' => 'decimal:2'
+        'valor_total' => 'decimal:2',
+        'peso_promedio' => 'decimal:2',
+        'peso_total' => 'decimal:2'
     ];
 
     protected $dates = [
@@ -63,6 +71,12 @@ class Production extends Model
         'updated_at',
         'deleted_at'
     ];
+
+    // Relaciones
+    public function galpon()
+    {
+        return $this->belongsTo(Galpon::class, 'galpon_id');
+    }
 
     // Scopes
     public function scopeActivo($query)
@@ -73,6 +87,26 @@ class Production extends Model
     public function scopeByTipo($query, $tipo)
     {
         return $query->where('tipo', $tipo);
+    }
+
+    public function scopeByTipoProduccion($query, $tipoProduccion)
+    {
+        return $query->where('tipo_produccion', $tipoProduccion);
+    }
+
+    public function scopeHuevos($query)
+    {
+        return $query->where('tipo_produccion', 'huevos');
+    }
+
+    public function scopeCarne($query)
+    {
+        return $query->where('tipo_produccion', 'carne');
+    }
+
+    public function scopeByGalpon($query, $galponId)
+    {
+        return $query->where('galpon_id', $galponId);
     }
 
     public function scopeByDateRange($query, $startDate, $endDate)
@@ -101,6 +135,29 @@ class Production extends Model
         return '$' . number_format($this->valor_total, 0, ',', '.');
     }
 
+    public function getFormattedPesoPromedioAttribute()
+    {
+        return $this->peso_promedio ? number_format($this->peso_promedio, 2, ',', '.') . ' kg' : '-';
+    }
+
+    public function getFormattedPesoTotalAttribute()
+    {
+        return $this->peso_total ? number_format($this->peso_total, 2, ',', '.') . ' kg' : '-';
+    }
+
+    public function getTipoProduccionDisplayAttribute()
+    {
+        return $this->tipo_produccion === 'huevos' ? 'Huevos' : 'Carne';
+    }
+
+    public function getCantidadHuevosBuenosAttribute()
+    {
+        if ($this->tipo_produccion === 'huevos') {
+            return $this->cantidad - $this->huevos_rotos - $this->huevos_sucios;
+        }
+        return $this->cantidad;
+    }
+
     // Mutators
     public function setValorTotalAttribute($value)
     {
@@ -112,22 +169,40 @@ class Production extends Model
         }
     }
 
+    public function setPesoTotalAttribute($value)
+    {
+        // Calcular automáticamente el peso total si no se proporciona
+        if (empty($value) && $this->cantidad && $this->peso_promedio) {
+            $this->attributes['peso_total'] = $this->cantidad * $this->peso_promedio;
+        } else {
+            $this->attributes['peso_total'] = $value;
+        }
+    }
+
     // Métodos estáticos para estadísticas
-    public static function getTotalBySemana($semana)
+    public static function getTotalBySemana($semana, $tipoProduccion = null)
     {
-        return self::where('semana_produccion', $semana)
-            ->where('estado', 'activo')
-            ->sum('cantidad');
+        $query = self::where('semana_produccion', $semana)->where('estado', 'activo');
+        
+        if ($tipoProduccion) {
+            $query->where('tipo_produccion', $tipoProduccion);
+        }
+        
+        return $query->sum('cantidad');
     }
 
-    public static function getValorTotalBySemana($semana)
+    public static function getValorTotalBySemana($semana, $tipoProduccion = null)
     {
-        return self::where('semana_produccion', $semana)
-            ->where('estado', 'activo')
-            ->sum('valor_total');
+        $query = self::where('semana_produccion', $semana)->where('estado', 'activo');
+        
+        if ($tipoProduccion) {
+            $query->where('tipo_produccion', $tipoProduccion);
+        }
+        
+        return $query->sum('valor_total');
     }
 
-    public static function getTotalByTipo($tipo, $semana = null)
+    public static function getTotalByTipo($tipo, $semana = null, $tipoProduccion = null)
     {
         $query = self::where('tipo', $tipo)->where('estado', 'activo');
         
@@ -135,10 +210,14 @@ class Production extends Model
             $query->where('semana_produccion', $semana);
         }
         
+        if ($tipoProduccion) {
+            $query->where('tipo_produccion', $tipoProduccion);
+        }
+        
         return $query->sum('cantidad');
     }
 
-    public static function getEstadisticasGenerales($semana = null)
+    public static function getEstadisticasGenerales($semana = null, $tipoProduccion = null)
     {
         $query = self::where('estado', 'activo');
         
@@ -146,11 +225,18 @@ class Production extends Model
             $query->where('semana_produccion', $semana);
         }
 
+        if ($tipoProduccion) {
+            $query->where('tipo_produccion', $tipoProduccion);
+        }
+
         return [
             'total_huevos' => $query->sum('cantidad'),
             'valor_total' => $query->sum('valor_total'),
             'promedio_por_dia' => $query->distinct('fecha')->count(),
-            'tipos_disponibles' => $query->distinct('tipo')->pluck('tipo')->toArray()
+            'tipos_disponibles' => $query->distinct('tipo')->pluck('tipo')->toArray(),
+            'peso_total' => $query->sum('peso_total'),
+            'huevos_rotos' => $query->sum('huevos_rotos'),
+            'huevos_sucios' => $query->sum('huevos_sucios')
         ];
     }
 }

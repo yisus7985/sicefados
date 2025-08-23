@@ -287,6 +287,22 @@
                                                 <p class="info-value">{{ $poultry_house->code }}</p>
                                             </div>
                                             <div class="col-md-6">
+                                                <p class="info-label">Tipo de Producción</p>
+                                                <p class="info-value">
+                                                    @if($poultry_house->tipo == 'gallinas_ponedoras')
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="fas fa-egg me-1"></i>Gallinas Ponedoras (Huevos)
+                                                        </span>
+                                                    @elseif($poultry_house->tipo == 'pollos_engorde')
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-drumstick-bite me-1"></i>Pollos de Engorde (Carne)
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary">No definido</span>
+                                                    @endif
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
                                                 <p class="info-label">Capacidad</p>
                                                 <p class="info-value">{{ number_format($poultry_house->capacity) }} aves</p>
                                             </div>

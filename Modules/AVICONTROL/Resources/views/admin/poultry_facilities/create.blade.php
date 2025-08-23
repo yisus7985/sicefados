@@ -447,6 +447,21 @@
                             </div>
                             
                             <div class="col-md-6 mb-3">
+                                <label for="tipo" class="form-label required-field">Tipo de Producción</label>
+                                <select class="form-select @error('tipo') is-invalid @enderror" id="tipo" name="tipo" required>
+                                    <option value="">Seleccione el tipo de producción</option>
+                                    <option value="gallinas_ponedoras" {{ old('tipo') == 'gallinas_ponedoras' ? 'selected' : '' }}>Gallinas Ponedoras (Producción de Huevos)</option>
+                                    <option value="pollos_engorde" {{ old('tipo') == 'pollos_engorde' ? 'selected' : '' }}>Pollos de Engorde (Producción de Carne)</option>
+                                </select>
+                                <div class="form-text">Especifique si el galpón será para producción de huevos o carne.</div>
+                                @error('tipo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label for="status" class="form-label required-field">Status</label>
                                 <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
                                     <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>

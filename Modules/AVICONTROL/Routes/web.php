@@ -73,9 +73,35 @@ Route::middleware(['web', 'lang'])->group(function () {
             // AJAX para obtener capacidad del galpón
             Route::get('facilities/{id}/capacity', [BirdController::class, 'getFacilityCapacity'])->name('facilities.capacity');
 
-            // ✅ Nuevas rutas para informes
-            Route::get('information', [InformationController::class, 'index'])->name('information.index');
-            Route::get('information/{id}', [InformationController::class, 'show'])->name('information.show');
+            // ✅ Rutas para el módulo de información
+            Route::prefix('information')->name('information.')->group(function () {
+                Route::get('/', [InformationController::class, 'index'])->name('index');
+                Route::get('/produccion', [InformationController::class, 'produccion'])->name('produccion');
+                Route::get('/alimentos', [InformationController::class, 'alimentos'])->name('alimentos');
+                Route::get('/seguimientos', [InformationController::class, 'seguimientos'])->name('seguimientos');
+                Route::get('/{id}', [InformationController::class, 'show'])->name('show');
+                
+                // Ruta para detalle del galpón
+                Route::get('/galpon/{galpon_id}/detalle', [InformationController::class, 'detalleGalpon'])->name('galpon.detalle');
+                
+                // Ruta de prueba
+                Route::get('/test-detalle', [InformationController::class, 'testDetalleGalpon'])->name('test.detalle');
+                Route::get('/test-produccion', [InformationController::class, 'testProduccion'])->name('test.produccion');
+                
+                // Endpoints AJAX para datos filtrados
+                Route::post('/produccion/filtrar', [InformationController::class, 'filtrarProduccion'])->name('produccion.filtrar');
+                Route::post('/alimentos/filtrar', [InformationController::class, 'filtrarAlimentos'])->name('alimentos.filtrar');
+                Route::post('/seguimientos/filtrar', [InformationController::class, 'filtrarSeguimientos'])->name('seguimientos.filtrar');
+                
+                // Exportaciones
+                Route::get('/produccion/exportar-excel', [InformationController::class, 'exportarProduccionExcel'])->name('produccion.excel');
+                Route::get('/produccion/exportar-pdf', [InformationController::class, 'exportarProduccionPdf'])->name('produccion.pdf');
+                Route::get('/alimentos/exportar-excel', [InformationController::class, 'exportarAlimentosExcel'])->name('alimentos.excel');
+                Route::get('/alimentos/exportar-pdf', [InformationController::class, 'exportarAlimentosPdf'])->name('alimentos.pdf');
+                Route::get('/seguimientos/exportar-excel', [InformationController::class, 'exportarSeguimientosExcel'])->name('seguimientos.excel');
+                Route::get('/seguimientos/exportar-pdf', [InformationController::class, 'exportarSeguimientosPdf'])->name('seguimientos.pdf');
+            });
+            
             // Endpoint AJAX para informes filtrados
    
 

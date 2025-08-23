@@ -58,6 +58,7 @@
                                 <tr>
                                     <th class="border-0">ID</th>
                                     <th class="border-0">Nombre</th>
+                                    <th class="border-0">Tipo de Producción</th>
                                     <th class="border-0">Dimensiones (m)</th>
                                     <th class="border-0">Capacidad</th>
                                     <th class="border-0">Estado</th>
@@ -73,6 +74,19 @@
                                         </td>
                                         <td class="align-middle">
                                             <strong>{{ $facility->name }}</strong>
+                                        </td>
+                                        <td class="align-middle">
+                                            @if($facility->tipo == 'gallinas_ponedoras')
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-egg me-1"></i>Huevos
+                                                </span>
+                                            @elseif($facility->tipo == 'pollos_engorde')
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-drumstick-bite me-1"></i>Carne
+                                                </span>
+                                            @else
+                                                <span class="badge bg-secondary">No definido</span>
+                                            @endif
                                         </td>
                                         <td class="align-middle">
                                             <span class="text-muted">
@@ -142,7 +156,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-4">
+                                        <td colspan="8" class="text-center py-4">
                                             <div class="text-muted">
                                                 <i class="fas fa-warehouse fa-3x mb-3"></i>
                                                 <p class="h5">No hay instalaciones registradas</p>

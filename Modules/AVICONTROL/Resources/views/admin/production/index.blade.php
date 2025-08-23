@@ -1,6 +1,6 @@
 @extends('avicontrol::layouts.admin')
 
-@section('title', 'Control de Producción de Huevos')
+@section('title', 'Control de Producción Avícola')
 
 @section('content')
 <div class="container-fluid">
@@ -10,19 +10,22 @@
             <div class="col">
                 <h2 class="page-title">
                     <i class="fas fa-egg text-primary me-3"></i>
-                    Control de Producción de Huevos
+                    Control de Producción Avícola
                 </h2>
-                <p class="text-muted mb-0">Sistema de registro y control de producción avícola</p>
+                <p class="text-muted mb-0">Sistema de registro y control de producción de huevos y carne</p>
             </div>
             <div class="col-auto">
                 <div class="btn-group" role="group">
-                    <a href="{{ route('avicontrol.admin.production.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Nuevo Registro
+                    <a href="{{ route('avicontrol.admin.production.create', ['tipo_produccion' => 'huevos']) }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Nuevo Huevos
+                    </a>
+                    <a href="{{ route('avicontrol.admin.production.create', ['tipo_produccion' => 'carne']) }}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Nuevo Carne
                     </a>
                     <a href="{{ route('avicontrol.admin.production.dashboard') }}" class="btn btn-info">
                         <i class="fas fa-chart-line me-2"></i>Dashboard
                     </a>
-                    <a href="{{ route('avicontrol.admin.production.report') }}" class="btn btn-success">
+                    <a href="{{ route('avicontrol.admin.production.report') }}" class="btn btn-warning">
                         <i class="fas fa-file-pdf me-2"></i>Reporte PDF
                     </a>
                 </div>
@@ -39,7 +42,7 @@
                 </div>
                 <div class="stat-info">
                     <h3>{{ number_format($stats['total_huevos'] ?? 0) }}</h3>
-                    <p>Total Huevos</p>
+                    <p>Total {{ request('tipo_produccion') === 'carne' ? 'Kg' : 'Unidades' }}</p>
                 </div>
             </div>
         </div>
@@ -72,7 +75,7 @@
                 </div>
                 <div class="stat-info">
                     <h3>{{ count($stats['tipos_disponibles'] ?? []) }}</h3>
-                    <p>Tipos de Huevo</p>
+                    <p>Tipos de {{ request('tipo_produccion') === 'carne' ? 'Carne' : 'Huevo' }}</p>
                 </div>
             </div>
         </div>
@@ -88,7 +91,26 @@
         <div class="card-body">
             <form method="GET" action="{{ route('avicontrol.admin.production.index') }}" class="row g-3">
                 <div class="col-md-2">
-                    <label for="tipo" class="form-label">Tipo de Huevo</label>
+                    <label for="tipo_produccion" class="form-label">Tipo de Producción</label>
+                    <select name="tipo_produccion" id="tipo_produccion" class="form-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="huevos" {{ request('tipo_produccion') == 'huevos' ? 'selected' : '' }}>Huevos</option>
+                        <option value="carne" {{ request('tipo_produccion') == 'carne' ? 'selected' : '' }}>Carne</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="galpon_id" class="form-label">Galpón</label>
+                    <select name="galpon_id" id="galpon_id" class="form-select">
+                        <option value="">Todos los galpones</option>
+                        @foreach($galpones as $galpon)
+                            <option value="{{ $galpon->id }}" {{ request('galpon_id') == $galpon->id ? 'selected' : '' }}>
+                                {{ $galpon->name }} ({{ $galpon->tipo_display }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="tipo" class="form-label">Tipo</label>
                     <select name="tipo" id="tipo" class="form-select">
                         <option value="">Todos los tipos</option>
                         <option value="A" {{ request('tipo') == 'A' ? 'selected' : '' }}>Tipo A</option>
@@ -173,8 +195,14 @@
                                     <input type="checkbox" id="selectAll" class="form-check-input">
                                 </th>
                                 <th>FECHA</th>
+                                <th>TIPO PRODUCCIÓN</th>
+                                <th>GALPÓN</th>
                                 <th>TIPO</th>
                                 <th>CANTIDAD</th>
+                                <th>PESO PROMEDIO</th>
+                                <th>PESO TOTAL</th>
+                                <th>HUEVOS ROTOS</th>
+                                <th>HUEVOS SUCIOS</th>
                                 <th>VALOR UNIDAD</th>
                                 <th>VALOR TOTAL</th>
                                 <th>DESTINO</th>
@@ -198,10 +226,38 @@
                                         </span>
                                     </td>
                                     <td>
+                                        <span class="badge bg-{{ $production->tipo_produccion === 'huevos' ? 'primary' : 'success' }}">
+                                            {{ $production->tipo_produccion_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if($production->galpon)
+                                            <span class="badge bg-info">{{ $production->galpon->name }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <span class="badge bg-primary">{{ $production->tipo }}</span>
                                     </td>
                                     <td>
                                         <strong>{{ number_format($production->cantidad) }}</strong>
+                                    </td>
+                                    <td>{{ $production->formatted_peso_promedio }}</td>
+                                    <td>{{ $production->formatted_peso_total }}</td>
+                                    <td>
+                                        @if($production->tipo_produccion === 'huevos')
+                                            <span class="badge bg-danger">{{ $production->huevos_rotos }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($production->tipo_produccion === 'huevos')
+                                            <span class="badge bg-warning">{{ $production->huevos_sucios }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td>{{ $production->formatted_valor_unidad }}</td>
                                     <td>
@@ -255,13 +311,18 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="12" class="text-center py-4">
+                                    <td colspan="18" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="fas fa-inbox fa-3x mb-3"></i>
                                             <p>No hay registros de producción disponibles</p>
-                                            <a href="{{ route('avicontrol.admin.production.create') }}" class="btn btn-primary">
-                                                <i class="fas fa-plus me-2"></i>Crear Primer Registro
-                                            </a>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ route('avicontrol.admin.production.create', ['tipo_produccion' => 'huevos']) }}" class="btn btn-primary">
+                                                    <i class="fas fa-plus me-2"></i>Crear Registro Huevos
+                                                </a>
+                                                <a href="{{ route('avicontrol.admin.production.create', ['tipo_produccion' => 'carne']) }}" class="btn btn-success">
+                                                    <i class="fas fa-plus me-2"></i>Crear Registro Carne
+                                                </a>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -338,7 +399,7 @@ $(document).ready(function() {
         pageLength: 25,
         order: [[1, 'desc']],
         columnDefs: [
-            { orderable: false, targets: [0, 11] }
+            { orderable: false, targets: [0, 17] }
         ]
     });
 

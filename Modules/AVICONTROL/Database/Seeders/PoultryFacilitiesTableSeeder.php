@@ -19,6 +19,7 @@ class PoultryFacilitiesTableSeeder extends Seeder
         $poultryFacilities = [
             [
                 'name' => 'Poultry Facility 1',
+                'tipo' => 'gallinas_ponedoras',
                 'length' => 20.00,
                 'width' => 10.00,
                 'height' => 3.50,
@@ -29,6 +30,7 @@ class PoultryFacilitiesTableSeeder extends Seeder
             ],
             [
                 'name' => 'Poultry Facility 2',
+                'tipo' => 'gallinas_ponedoras',
                 'length' => 15.00,
                 'width' => 8.00,
                 'height' => 3.00,
@@ -39,6 +41,7 @@ class PoultryFacilitiesTableSeeder extends Seeder
             ],
             [
                 'name' => 'Poultry Facility 3',
+                'tipo' => 'pollos_engorde',
                 'length' => 25.00,
                 'width' => 12.00,
                 'height' => 4.00,
@@ -49,6 +52,7 @@ class PoultryFacilitiesTableSeeder extends Seeder
             ],
             [
                 'name' => 'Poultry Facility 4',
+                'tipo' => 'gallinas_ponedoras',
                 'length' => 18.00,
                 'width' => 9.00,
                 'height' => 3.20,

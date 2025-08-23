@@ -86,6 +86,7 @@ class PoultryFacilityController extends Controller
             
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:100|unique:avicontrol_poultry_facilities,name',
+                'tipo' => 'required|in:gallinas_ponedoras,pollos_engorde',
                 'length' => 'required|numeric|min:1',
                 'width' => 'required|numeric|min:1',
                 'height' => 'required|numeric|min:1',
@@ -204,6 +205,7 @@ class PoultryFacilityController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:100|unique:avicontrol_poultry_facilities,name,' . $id,
+                'tipo' => 'required|in:gallinas_ponedoras,pollos_engorde',
                 'length' => 'required|numeric|min:1',
                 'width' => 'required|numeric|min:1',
                 'height' => 'required|numeric|min:1',

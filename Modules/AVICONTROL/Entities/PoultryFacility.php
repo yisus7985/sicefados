@@ -13,6 +13,7 @@ class PoultryFacility extends Model
     
     protected $fillable = [
         'name',
+        'tipo',
         'length',
         'width',
         'height',
@@ -89,5 +90,26 @@ class PoultryFacility extends Model
     public function aves()
     {
         return $this->hasMany(Bird::class, 'galpon_id');
+    }
+
+    // Métodos para el tipo de producción
+    public function isEggProduction()
+    {
+        return $this->tipo === 'gallinas_ponedoras';
+    }
+
+    public function isMeatProduction()
+    {
+        return $this->tipo === 'pollos_engorde';
+    }
+
+    public function getTipoProduccionTextAttribute()
+    {
+        return $this->tipo === 'gallinas_ponedoras' ? 'Gallinas Ponedoras' : 'Pollos de Engorde';
+    }
+
+    public function getTipoProduccionShortAttribute()
+    {
+        return $this->tipo === 'gallinas_ponedoras' ? 'Huevos' : 'Carne';
     }
 }

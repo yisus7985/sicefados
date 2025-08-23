@@ -10,9 +10,9 @@
             <div class="col">
                 <h2 class="page-title">
                     <i class="fas fa-plus-circle text-primary me-3"></i>
-                    Nuevo Registro de Producción
+                    Nuevo Registro de Producción - {{ $tipoProduccion === 'huevos' ? 'Huevos' : 'Carne' }}
                 </h2>
-                <p class="text-muted mb-0">Complete el formulario para registrar la producción de huevos</p>
+                <p class="text-muted mb-0">Complete el formulario para registrar la producción de {{ $tipoProduccion === 'huevos' ? 'huevos' : 'carne' }}</p>
             </div>
             <div class="col-auto">
                 <a href="{{ route('avicontrol.admin.production.index') }}" class="btn btn-secondary">
@@ -24,22 +24,26 @@
 
     <!-- Production Form -->
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-egg me-2"></i>Información de Producción
+                        <i class="fas fa-{{ $tipoProduccion === 'huevos' ? 'egg' : 'drumstick-bite' }} me-2"></i>
+                        Información de Producción - {{ $tipoProduccion === 'huevos' ? 'Huevos' : 'Carne' }}
                     </h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ route('avicontrol.admin.production.store') }}" id="productionForm">
                         @csrf
                         
+                        <!-- Campos ocultos -->
+                        <input type="hidden" name="tipo_produccion" value="{{ $tipoProduccion }}">
+                        
                         <div class="row g-3">
                             <!-- Fecha -->
                             <div class="col-md-6">
                                 <label for="fecha" class="form-label">
-                                    <i class="fas fa-calendar me-1"></i>Fecha de Recolección <span class="text-danger">*</span>
+                                    <i class="fas fa-calendar me-1"></i>Fecha de {{ $tipoProduccion === 'huevos' ? 'Recolección' : 'Producción' }} <span class="text-danger">*</span>
                                 </label>
                                 <input type="date" class="form-control @error('fecha') is-invalid @enderror" 
                                        name="fecha" id="fecha" value="{{ old('fecha', date('Y-m-d')) }}" required>
@@ -48,10 +52,28 @@
                                 @enderror
                             </div>
 
-                            <!-- Tipo de Huevo -->
+                            <!-- Galpón -->
+                            <div class="col-md-6">
+                                <label for="galpon_id" class="form-label">
+                                    <i class="fas fa-home me-1"></i>Galpón <span class="text-danger">*</span>
+                                </label>
+                                <select name="galpon_id" id="galpon_id" class="form-select @error('galpon_id') is-invalid @enderror" required>
+                                    <option value="">Seleccione el galpón</option>
+                                    @foreach($galpones as $galpon)
+                                        <option value="{{ $galpon->id }}" {{ old('galpon_id') == $galpon->id ? 'selected' : '' }}>
+                                            {{ $galpon->name }} ({{ $galpon->tipo_display }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('galpon_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Tipo -->
                             <div class="col-md-6">
                                 <label for="tipo" class="form-label">
-                                    <i class="fas fa-layer-group me-1"></i>Tipo de Huevo <span class="text-danger">*</span>
+                                    <i class="fas fa-layer-group me-1"></i>Tipo <span class="text-danger">*</span>
                                 </label>
                                 <select name="tipo" id="tipo" class="form-select @error('tipo') is-invalid @enderror" required>
                                     <option value="">Seleccione el tipo</option>
@@ -69,20 +91,82 @@
                             <!-- Cantidad -->
                             <div class="col-md-6">
                                 <label for="cantidad" class="form-label">
-                                    <i class="fas fa-sort-numeric-up me-1"></i>Cantidad de Huevos <span class="text-danger">*</span>
+                                    <i class="fas fa-sort-numeric-up me-1"></i>Cantidad <span class="text-danger">*</span>
                                 </label>
                                 <input type="number" class="form-control @error('cantidad') is-invalid @enderror" 
                                        name="cantidad" id="cantidad" value="{{ old('cantidad') }}" 
                                        min="1" step="1" required>
+                                <small class="form-text text-muted">
+                                    {{ $tipoProduccion === 'huevos' ? 'Número de huevos' : 'Número de aves' }}
+                                </small>
                                 @error('cantidad')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
 
+                            <!-- Campos específicos para carne -->
+                            @if($tipoProduccion === 'carne')
+                                <!-- Peso Promedio -->
+                                <div class="col-md-6">
+                                    <label for="peso_promedio" class="form-label">
+                                        <i class="fas fa-weight-hanging me-1"></i>Peso Promedio (kg) <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" class="form-control @error('peso_promedio') is-invalid @enderror" 
+                                           name="peso_promedio" id="peso_promedio" value="{{ old('peso_promedio') }}" 
+                                           min="0" step="0.01" required>
+                                    @error('peso_promedio')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <!-- Peso Total -->
+                                <div class="col-md-6">
+                                    <label for="peso_total" class="form-label">
+                                        <i class="fas fa-weight-hanging me-1"></i>Peso Total (kg)
+                                    </label>
+                                    <input type="number" class="form-control @error('peso_total') is-invalid @enderror" 
+                                           name="peso_total" id="peso_total" value="{{ old('peso_total') }}" 
+                                           min="0" step="0.01" readonly>
+                                    <small class="form-text text-muted">Se calcula automáticamente</small>
+                                    @error('peso_total')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+
+                            <!-- Campos específicos para huevos -->
+                            @if($tipoProduccion === 'huevos')
+                                <!-- Huevos Rotos -->
+                                <div class="col-md-6">
+                                    <label for="huevos_rotos" class="form-label">
+                                        <i class="fas fa-times-circle me-1"></i>Huevos Rotos
+                                    </label>
+                                    <input type="number" class="form-control @error('huevos_rotos') is-invalid @enderror" 
+                                           name="huevos_rotos" id="huevos_rotos" value="{{ old('huevos_rotos', 0) }}" 
+                                           min="0" step="1">
+                                    @error('huevos_rotos')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <!-- Huevos Sucios -->
+                                <div class="col-md-6">
+                                    <label for="huevos_sucios" class="form-label">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Huevos Sucios
+                                    </label>
+                                    <input type="number" class="form-control @error('huevos_sucios') is-invalid @enderror" 
+                                           name="huevos_sucios" id="huevos_sucios" value="{{ old('huevos_sucios', 0) }}" 
+                                           min="0" step="1">
+                                    @error('huevos_sucios')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+
                             <!-- Valor por Unidad -->
                             <div class="col-md-6">
                                 <label for="valor_unidad" class="form-label">
-                                    <i class="fas fa-dollar-sign me-1"></i>Valor por Unidad <span class="text-danger">*</span>
+                                    <i class="fas fa-dollar-sign me-1"></i>Valor por {{ $tipoProduccion === 'huevos' ? 'Unidad' : 'Kg' }} <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
@@ -102,21 +186,19 @@
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="text" class="form-control" id="valor_total_display" 
-                                           value="0" readonly>
+                                    <input type="text" class="form-control" id="valor_total_display" readonly>
                                     <input type="hidden" name="valor_total" id="valor_total">
                                 </div>
-                                <small class="text-muted">Calculado automáticamente</small>
+                                <small class="form-text text-muted">Se calcula automáticamente</small>
                             </div>
 
                             <!-- Destino -->
                             <div class="col-md-6">
                                 <label for="destino" class="form-label">
-                                    <i class="fas fa-map-marker-alt me-1"></i>Destino <span class="text-danger">*</span>
+                                    <i class="fas fa-truck me-1"></i>Destino <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control @error('destino') is-invalid @enderror" 
-                                       name="destino" id="destino" value="{{ old('destino', 'Punto venta') }}" 
-                                       maxlength="100" required>
+                                       name="destino" id="destino" value="{{ old('destino', 'Punto venta') }}" required>
                                 @error('destino')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -127,37 +209,15 @@
                                 <label for="semana_produccion" class="form-label">
                                     <i class="fas fa-calendar-week me-1"></i>Semana de Producción
                                 </label>
-                                <select name="semana_produccion" id="semana_produccion" class="form-select">
+                                <select name="semana_produccion" id="semana_produccion" class="form-select @error('semana_produccion') is-invalid @enderror">
                                     <option value="">Seleccione la semana</option>
                                     @foreach($semanas as $semana)
                                         <option value="{{ $semana }}" {{ old('semana_produccion') == $semana ? 'selected' : '' }}>
                                             {{ $semana }}
                                         </option>
                                     @endforeach
-                                    <option value="nueva" {{ old('semana_produccion') == 'nueva' ? 'selected' : '' }}>
-                                        + Nueva Semana
-                                    </option>
                                 </select>
-                            </div>
-
-                            <!-- Nueva Semana (Campo oculto) -->
-                            <div class="col-md-6" id="nuevaSemanaField" style="display: none;">
-                                <label for="nueva_semana" class="form-label">
-                                    <i class="fas fa-plus me-1"></i>Nueva Semana
-                                </label>
-                                <input type="text" class="form-control" name="nueva_semana" id="nueva_semana" 
-                                       placeholder="Ej: Semana 43" maxlength="50">
-                            </div>
-
-                            <!-- Observaciones -->
-                            <div class="col-md-6">
-                                <label for="observaciones" class="form-label">
-                                    <i class="fas fa-sticky-note me-1"></i>Observaciones
-                                </label>
-                                <input type="text" class="form-control @error('observaciones') is-invalid @enderror" 
-                                       name="observaciones" id="observaciones" value="{{ old('observaciones') }}" 
-                                       placeholder="Ej: Semana 43" maxlength="500">
-                                @error('observaciones')
+                                @error('semana_produccion')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -165,11 +225,10 @@
                             <!-- Firma Recibido -->
                             <div class="col-md-6">
                                 <label for="firma_recibido" class="form-label">
-                                    <i class="fas fa-signature me-1"></i>Firma Recibido <span class="text-danger">*</span>
+                                    <i class="fas fa-user me-1"></i>Firma Recibido <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control @error('firma_recibido') is-invalid @enderror" 
-                                       name="firma_recibido" id="firma_recibido" value="{{ old('firma_recibido') }}" 
-                                       placeholder="Nombre de quien recibe" maxlength="100" required>
+                                       name="firma_recibido" id="firma_recibido" value="{{ old('firma_recibido') }}" required>
                                 @error('firma_recibido')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -181,60 +240,35 @@
                                     <i class="fas fa-user-tie me-1"></i>Firma Líder
                                 </label>
                                 <input type="text" class="form-control @error('firma_lider') is-invalid @enderror" 
-                                       name="firma_lider" id="firma_lider" value="{{ old('firma_lider') }}" 
-                                       placeholder="Nombre del líder" maxlength="100">
+                                       name="firma_lider" id="firma_lider" value="{{ old('firma_lider') }}">
                                 @error('firma_lider')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                        </div>
 
-                        <!-- Summary Card -->
-                        <div class="row mt-4">
+                            <!-- Observaciones -->
                             <div class="col-12">
-                                <div class="card bg-light">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary">
-                                            <i class="fas fa-info-circle me-2"></i>Resumen del Registro
-                                        </h6>
-                                        <div class="row">
-                                            <div class="col-md-3">
-                                                <small class="text-muted">Tipo de Huevo:</small>
-                                                <p class="mb-0 fw-bold" id="summaryTipo">-</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <small class="text-muted">Cantidad:</small>
-                                                <p class="mb-0 fw-bold" id="summaryCantidad">-</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <small class="text-muted">Valor Total:</small>
-                                                <p class="mb-0 fw-bold text-success" id="summaryValorTotal">-</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <small class="text-muted">Fecha:</small>
-                                                <p class="mb-0 fw-bold" id="summaryFecha">-</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <label for="observaciones" class="form-label">
+                                    <i class="fas fa-comment me-1"></i>Observaciones
+                                </label>
+                                <textarea class="form-control @error('observaciones') is-invalid @enderror" 
+                                          name="observaciones" id="observaciones" rows="3">{{ old('observaciones') }}</textarea>
+                                @error('observaciones')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
                         <!-- Form Actions -->
                         <div class="row mt-4">
                             <div class="col-12">
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-end gap-2">
                                     <a href="{{ route('avicontrol.admin.production.index') }}" class="btn btn-secondary">
                                         <i class="fas fa-times me-2"></i>Cancelar
                                     </a>
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-info" id="previewBtn">
-                                            <i class="fas fa-eye me-2"></i>Vista Previa
-                                        </button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>Guardar Registro
-                                        </button>
-                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Guardar Registro
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -244,215 +278,69 @@
         </div>
     </div>
 </div>
-
-<!-- Preview Modal -->
-<div class="modal fade" id="previewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-eye me-2"></i>Vista Previa del Registro
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary">Información Básica</h6>
-                        <table class="table table-sm">
-                            <tr><td><strong>Fecha:</strong></td><td id="previewFecha">-</td></tr>
-                            <tr><td><strong>Tipo:</strong></td><td id="previewTipo">-</td></tr>
-                            <tr><td><strong>Cantidad:</strong></td><td id="previewCantidad">-</td></tr>
-                            <tr><td><strong>Valor Unidad:</strong></td><td id="previewValorUnidad">-</td></tr>
-                            <tr><td><strong>Valor Total:</strong></td><td id="previewValorTotal">-</td></tr>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-primary">Información Adicional</h6>
-                        <table class="table table-sm">
-                            <tr><td><strong>Destino:</strong></td><td id="previewDestino">-</td></tr>
-                            <tr><td><strong>Observaciones:</strong></td><td id="previewObservaciones">-</td></tr>
-                            <tr><td><strong>Firma Recibido:</strong></td><td id="previewFirmaRecibido">-</td></tr>
-                            <tr><td><strong>Semana:</strong></td><td id="previewSemana">-</td></tr>
-                            <tr><td><strong>Firma Líder:</strong></td><td id="previewFirmaLider">-</td></tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('productionForm').submit()">
-                    <i class="fas fa-save me-2"></i>Confirmar y Guardar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Initialize form elements
-    initializeForm();
-    
-    // Event listeners
-    $('#cantidad, #valor_unidad').on('input', calculateTotal);
-    $('#semana_produccion').on('change', handleSemanaChange);
-    $('#previewBtn').on('click', showPreview);
-    
-    // Form validation
-    $('#productionForm').on('submit', validateForm);
-});
-
-function initializeForm() {
-    // Set default date to today
-    if (!$('#fecha').val()) {
-        $('#fecha').val(new Date().toISOString().split('T')[0]);
-    }
-    
-    // Calculate initial total
-    calculateTotal();
-    
-    // Update summary
-    updateSummary();
-}
-
-function calculateTotal() {
-    const cantidad = parseInt($('#cantidad').val()) || 0;
-    const valorUnidad = parseFloat($('#valor_unidad').val()) || 0;
-    const valorTotal = cantidad * valorUnidad;
-    
-    $('#valor_total').val(valorTotal.toFixed(2));
-    $('#valor_total_display').val('$' + valorTotal.toLocaleString('es-CO', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }));
-    
-    updateSummary();
-}
-
-function handleSemanaChange() {
-    const selectedValue = $('#semana_produccion').val();
-    
-    if (selectedValue === 'nueva') {
-        $('#nuevaSemanaField').show();
-        $('#nueva_semana').prop('required', true);
-    } else {
-        $('#nuevaSemanaField').hide();
-        $('#nueva_semana').prop('required', false);
-        $('#nueva_semana').val('');
-    }
-}
-
-function updateSummary() {
-    const fecha = $('#fecha').val();
-    const tipo = $('#tipo').val();
-    const cantidad = $('#cantidad').val();
-    const valorTotal = $('#valor_total').val();
-    
-    $('#summaryFecha').text(fecha ? new Date(fecha).toLocaleDateString('es-CO') : '-');
-    $('#summaryTipo').text(tipo ? 'Tipo ' + tipo : '-');
-    $('#summaryCantidad').text(cantidad ? parseInt(cantidad).toLocaleString('es-CO') : '-');
-    $('#summaryValorTotal').text(valorTotal ? '$' + parseFloat(valorTotal).toLocaleString('es-CO', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }) : '-');
-}
-
-function showPreview() {
-    // Validate required fields first
-    if (!validateRequiredFields()) {
-        return;
-    }
-    
-    // Update preview modal with current form data
-    $('#previewFecha').text($('#fecha').val() ? new Date($('#fecha').val()).toLocaleDateString('es-CO') : '-');
-    $('#previewTipo').text($('#tipo').val() ? 'Tipo ' + $('#tipo').val() : '-');
-    $('#previewCantidad').text($('#cantidad').val() ? parseInt($('#cantidad').val()).toLocaleString('es-CO') : '-');
-    $('#previewValorUnidad').text($('#valor_unidad').val() ? '$' + parseFloat($('#valor_unidad').val()).toLocaleString('es-CO', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }) : '-');
-    $('#previewValorTotal').text($('#valor_total').val() ? '$' + parseFloat($('#valor_total').val()).toLocaleString('es-CO', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }) : '-');
-    $('#previewDestino').text($('#destino').val() || '-');
-    $('#previewObservaciones').text($('#observaciones').val() || '-');
-    $('#previewFirmaRecibido').text($('#firma_recibido').val() || '-');
-    
-    const semana = $('#semana_produccion').val();
-    if (semana === 'nueva') {
-        $('#previewSemana').text($('#nueva_semana').val() || '-');
-    } else {
-        $('#previewSemana').text(semana || '-');
-    }
-    
-    $('#previewFirmaLider').text($('#firma_lider').val() || '-');
-    
-    // Show modal
-    $('#previewModal').modal('show');
-}
-
-function validateRequiredFields() {
-    let isValid = true;
-    const requiredFields = ['fecha', 'tipo', 'cantidad', 'valor_unidad', 'destino', 'firma_recibido'];
-    
-    requiredFields.forEach(field => {
-        const element = $('#' + field);
-        if (!element.val()) {
-            element.addClass('is-invalid');
-            isValid = false;
-        } else {
-            element.removeClass('is-invalid');
-        }
-    });
-    
-    // Check if nueva_semana is required
-    if ($('#semana_produccion').val() === 'nueva' && !$('#nueva_semana').val()) {
-        $('#nueva_semana').addClass('is-invalid');
-        isValid = false;
-    }
-    
-    if (!isValid) {
-        // Scroll to first error
-        $('html, body').animate({
-            scrollTop: $('.is-invalid').first().offset().top - 100
-        }, 500);
+    // Calcular valor total automáticamente
+    function calcularValorTotal() {
+        const cantidad = parseFloat($('#cantidad').val()) || 0;
+        const valorUnidad = parseFloat($('#valor_unidad').val()) || 0;
+        const valorTotal = cantidad * valorUnidad;
         
-        // Show error message
-        if (!$('.alert-danger').length) {
-            $('.page-header').after(`
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Por favor complete todos los campos obligatorios marcados con <span class="text-danger">*</span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `);
-        }
+        $('#valor_total_display').val('$' + valorTotal.toLocaleString('es-CO', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }));
+        $('#valor_total').val(valorTotal);
     }
-    
-    return isValid;
-}
 
-function validateForm(e) {
-    if (!validateRequiredFields()) {
-        e.preventDefault();
-        return false;
+    // Calcular peso total automáticamente (solo para carne)
+    function calcularPesoTotal() {
+        const cantidad = parseFloat($('#cantidad').val()) || 0;
+        const pesoPromedio = parseFloat($('#peso_promedio').val()) || 0;
+        const pesoTotal = cantidad * pesoPromedio;
+        
+        $('#peso_total').val(pesoTotal.toFixed(2));
     }
-    
-    // Handle nueva_semana field
-    if ($('#semana_produccion').val() === 'nueva' && $('#nueva_semana').val()) {
-        $('#semana_produccion').val($('#nueva_semana').val());
-    }
-    
-    return true;
-}
 
-// Auto-hide alerts
-setTimeout(function() {
-    $('.alert').fadeOut('slow');
-}, 5000);
+    // Event listeners para cálculos automáticos
+    $('#cantidad, #valor_unidad').on('input', function() {
+        calcularValorTotal();
+        @if($tipoProduccion === 'carne')
+            calcularPesoTotal();
+        @endif
+    });
+
+    @if($tipoProduccion === 'carne')
+        $('#peso_promedio').on('input', function() {
+            calcularPesoTotal();
+        });
+    @endif
+
+    // Validación de formulario
+    $('#productionForm').on('submit', function(e) {
+        const cantidad = parseInt($('#cantidad').val()) || 0;
+        const huevosRotos = parseInt($('#huevos_rotos').val()) || 0;
+        const huevosSucios = parseInt($('#huevos_sucios').val()) || 0;
+
+        @if($tipoProduccion === 'huevos')
+            if (huevosRotos + huevosSucios > cantidad) {
+                e.preventDefault();
+                alert('La suma de huevos rotos y sucios no puede ser mayor que la cantidad total.');
+                return false;
+            }
+        @endif
+
+        return true;
+    });
+
+    // Inicializar cálculos
+    calcularValorTotal();
+    @if($tipoProduccion === 'carne')
+        calcularPesoTotal();
+    @endif
+});
 </script>
 @endpush

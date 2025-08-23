@@ -13,6 +13,7 @@ class Galpon extends Model
 
     protected $fillable = [
         'name',
+        'tipo',
         'length',
         'width',
         'height',
@@ -22,6 +23,10 @@ class Galpon extends Model
         'creation_date'
     ];
 
+    protected $casts = [
+        'creation_date' => 'date'
+    ];
+
     protected $dates = [
         'creation_date',
         'created_at',
@@ -29,12 +34,35 @@ class Galpon extends Model
         'deleted_at'
     ];
 
+    // Relación con producción
+    public function productions()
+    {
+        return $this->hasMany(Production::class, 'galpon_id');
+    }
+
     // Relación con producción diaria (a futuro)
     public function produccionDiaria()
     {
         return $this->hasMany(ProduccionDiaria::class);
     }
 
+    // Scopes
+    public function scopeGallinasPonedoras($query)
+    {
+        return $query->where('tipo', 'gallinas_ponedoras');
+    }
+
+    public function scopePollosEngorde($query)
+    {
+        return $query->where('tipo', 'pollos_engorde');
+    }
+
+    public function scopeActivo($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    // Accessors
     public function getAreaAttribute()
     {
         return $this->length * $this->width;
@@ -49,5 +77,15 @@ class Galpon extends Model
     {
         $area = $this->getAreaAttribute();
         return $area > 0 ? $this->capacity / $area : 0;
+    }
+
+    public function getTipoDisplayAttribute()
+    {
+        return $this->tipo === 'gallinas_ponedoras' ? 'Gallinas Ponederas' : 'Pollos de Engorde';
+    }
+
+    public function getTipoProduccionAttribute()
+    {
+        return $this->tipo === 'gallinas_ponedoras' ? 'huevos' : 'carne';
     }
 }
