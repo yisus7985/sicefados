@@ -20,6 +20,7 @@ class Production extends Model
         'tipo_produccion',
         'galpon_id',
         'cantidad',
+        'mortalidad_aves',
         'peso_promedio',
         'peso_total',
         'huevos_rotos',

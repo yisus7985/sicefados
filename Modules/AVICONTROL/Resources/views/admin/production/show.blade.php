@@ -76,6 +76,14 @@
                             </p>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-bold">Mortalidad de Aves:</label>
+                            <p class="mb-0">
+                                <i class="fas fa-heart-broken text-danger"></i>
+                                <span class="fs-5 fw-bold text-danger">{{ number_format($production->mortalidad_aves ?? 0) }}</span> 
+                                aves
+                            </p>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label fw-bold">Valor por {{ $production->tipo_produccion === 'huevos' ? 'Unidad' : 'Kg' }}:</label>
                             <p class="mb-0">
                                 <i class="fas fa-dollar-sign text-success"></i>

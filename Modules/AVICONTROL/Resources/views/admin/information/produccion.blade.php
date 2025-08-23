@@ -49,6 +49,16 @@
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
+                                    <label for="tipo_produccion">Tipo Producción</label>
+                                    <select class="form-control" id="tipo_produccion" name="tipo_produccion">
+                                        <option value="">Todos los tipos</option>
+                                        <option value="huevos">Huevos</option>
+                                        <option value="carne">Carne</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
                                     <label for="tipo_huevo">Tipo de Huevo</label>
                                     <select class="form-control" id="tipo_huevo" name="tipo_huevo">
                                         <option value="">Todos los tipos</option>
@@ -152,28 +162,42 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="text-center text-white">
                                         <h2 class="mb-0">{{ number_format($estadisticasProduccion['produccion_hoy'] ?? 0) }}</h2>
                                         <p class="mb-0">Huevos Totales</p>
                                         <small>Producidos hoy</small>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="text-center text-white">
                                         <h2 class="mb-0">{{ number_format($estadisticasProduccion['huevos_buenos_hoy'] ?? 0) }}</h2>
                                         <p class="mb-0">Huevos Buenos</p>
                                         <small>Sin desperfectos</small>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="text-center text-white">
                                         <h2 class="mb-0">{{ number_format($estadisticasProduccion['huevos_rotos_hoy'] ?? 0) }}</h2>
                                         <p class="mb-0">Huevos Rotos</p>
                                         <small>Pérdidas del día</small>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <div class="text-center text-white">
+                                        <h2 class="mb-0">{{ number_format($estadisticasProduccion['mortalidad_hoy'] ?? 0) }}</h2>
+                                        <p class="mb-0">Mortalidad</p>
+                                        <small>Aves fallecidas</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-center text-white">
+                                        <h2 class="mb-0">{{ number_format($estadisticasProduccion['aves_activas_hoy'] ?? 0) }}</h2>
+                                        <p class="mb-0">Aves Activas</p>
+                                        <small>En producción</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
                                     <div class="text-center text-white">
                                         <h2 class="mb-0">${{ number_format($estadisticasProduccion['valor_total_hoy'] ?? 0, 0, ',', '.') }}</h2>
                                         <p class="mb-0">Valor Total</p>
@@ -189,7 +213,7 @@
             <!-- Estadísticas Adicionales -->
             @if(isset($estadisticasProduccion['produccion_hoy']) || isset($estadisticasProduccion['produccion_mes']))
             <div class="row mb-4">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h5 class="text-success">Producción del Día</h5>
@@ -198,12 +222,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h5 class="text-info">Producción del Mes</h5>
                             <h3 class="text-info">{{ number_format($estadisticasProduccion['produccion_mes'] ?? 0) }}</h3>
                             <small class="text-muted">Unidades producidas este mes</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="text-danger">Mortalidad del Día</h5>
+                            <h3 class="text-danger">{{ number_format($estadisticasProduccion['mortalidad_hoy'] ?? 0) }}</h3>
+                            <small class="text-muted">Aves fallecidas hoy</small>
                         </div>
                     </div>
                 </div>
@@ -238,14 +271,14 @@
                             <thead>
                                 <tr>
                                     <th>Fecha</th>
+                                    <th>Tipo Producción</th>
                                     <th>Galpón</th>
                                     <th>Tipo</th>
-                                    <th>Total Aves</th>
-                                    <th>Producción Total</th>
+                                    <th>Cantidad</th>
+                                    <th>Mortalidad</th>
                                     <th>Huevos Buenos</th>
                                     <th>Huevos Rotos</th>
                                     <th>Huevos Sucios</th>
-                                    <th>Porcentaje</th>
                                     <th>Peso Promedio</th>
                                     <th>Peso Total</th>
                                     <th>Valor Unidad</th>
@@ -266,6 +299,11 @@
                                             </span>
                                         </td>
                                         <td>
+                                            <span class="badge bg-{{ ($produccion['tipo_produccion'] ?? 'huevos') === 'huevos' ? 'warning text-dark' : 'danger' }}">
+                                                {{ ($produccion['tipo_produccion'] ?? 'huevos') === 'huevos' ? 'Huevos' : 'Carne' }}
+                                            </span>
+                                        </td>
+                                        <td>
                                             <span class="badge bg-info">{{ $produccion['galpon'] }}</span>
                                         </td>
                                         <td>
@@ -273,33 +311,61 @@
                                                 {{ $produccion['tipo'] }}
                                             </span>
                                         </td>
-                                        <td>{{ number_format($produccion['total_aves']) }}</td>
                                         <td>
-                                            <strong class="text-primary">{{ number_format($produccion['produccion']) }}</strong>
+                                            <strong class="text-primary">{{ number_format($produccion['cantidad'] ?? $produccion['produccion'] ?? 0) }}</strong>
                                         </td>
                                         <td>
-                                            <span class="badge bg-success">{{ number_format($produccion['huevos_buenos'] ?? 0) }}</span>
+                                            @if(($produccion['mortalidad_aves'] ?? 0) > 0)
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-heart-broken me-1"></i>
+                                                    {{ number_format($produccion['mortalidad_aves']) }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                         <td>
-                                            <span class="badge bg-danger">{{ number_format($produccion['huevos_rotos'] ?? 0) }}</span>
+                                            @if(($produccion['tipo_produccion'] ?? 'huevos') === 'huevos')
+                                                <span class="badge bg-success">{{ number_format($produccion['huevos_buenos'] ?? 0) }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                         <td>
-                                            <span class="badge bg-warning">{{ number_format($produccion['huevos_sucios'] ?? 0) }}</span>
+                                            @if(($produccion['tipo_produccion'] ?? 'huevos') === 'huevos')
+                                                <span class="badge bg-danger">{{ number_format($produccion['huevos_rotos'] ?? 0) }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $produccion['porcentaje'] > 90 ? 'success' : ($produccion['porcentaje'] > 80 ? 'warning' : 'danger') }}">
-                                                {{ $produccion['porcentaje'] }}%
-                                            </span>
+                                            @if(($produccion['tipo_produccion'] ?? 'huevos') === 'huevos')
+                                                <span class="badge bg-warning">{{ number_format($produccion['huevos_sucios'] ?? 0) }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
-                                        <td>{{ number_format($produccion['peso_promedio'], 1) }} g</td>
-                                        <td>{{ number_format($produccion['peso_total'] ?? 0, 1) }} kg</td>
+                                        <td>
+                                            @if(($produccion['tipo_produccion'] ?? 'huevos') === 'carne')
+                                                {{ number_format($produccion['peso_promedio'] ?? 0, 2) }} kg
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if(($produccion['tipo_produccion'] ?? 'huevos') === 'carne')
+                                                {{ number_format($produccion['peso_total'] ?? 0, 2) }} kg
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td>${{ number_format($produccion['valor_unidad'] ?? 0, 0, ',', '.') }}</td>
                                         <td>
                                             <strong class="text-success">${{ number_format($produccion['valor_total'] ?? 0, 0, ',', '.') }}</strong>
                                         </td>
                                         <td>{{ $produccion['destino'] ?? 'N/A' }}</td>
                                         <td>
-                                            <span class="badge bg-info">{{ $produccion['semana'] ?? 'N/A' }}</span>
+                                            <span class="badge bg-info">{{ $produccion['semana_produccion'] ?? $produccion['semana'] ?? 'N/A' }}</span>
                                         </td>
                                         <td>
                                             <span class="badge bg-{{ $produccion['estado'] == 'activo' ? 'success' : 'secondary' }}">
@@ -316,11 +382,11 @@
                                     </tr>
                                     @endforeach
                                 @else
-                                    <tr>
-                                                                            <td colspan="17" class="text-center text-muted">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        No hay datos de producción disponibles
-                                    </td>
+                                                                        <tr>
+                                        <td colspan="18" class="text-center text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            No hay datos de producción disponibles
+                                        </td>
                                     </tr>
                                 @endif
                             </tbody>
@@ -331,7 +397,7 @@
 
             <!-- Estadísticas por Tipo de Huevo -->
             <div class="row mb-4">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
                             <h4 class="card-title">
@@ -369,7 +435,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
                             <h4 class="card-title">
@@ -397,6 +463,48 @@
                                         <small>Rotos</small>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">
+                                <i class="fas fa-heart-broken mr-2"></i>
+                                Estadísticas de Mortalidad - Hoy
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border rounded p-3 bg-danger text-white">
+                                        <h5 class="mb-1">{{ number_format($estadisticasProduccion['mortalidad_hoy'] ?? 0) }}</h5>
+                                        <small>Total Fallecidas</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3 bg-info text-white">
+                                        <h5 class="mb-1">{{ number_format($estadisticasProduccion['aves_activas_hoy'] ?? 0) }}</h5>
+                                        <small>Aves Activas</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="progress">
+                                    @php
+                                        $totalAves = ($estadisticasProduccion['aves_activas_hoy'] ?? 0) + ($estadisticasProduccion['mortalidad_hoy'] ?? 0);
+                                        $porcentajeMortalidad = $totalAves > 0 ? (($estadisticasProduccion['mortalidad_hoy'] ?? 0) / $totalAves) * 100 : 0;
+                                    @endphp
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ $porcentajeMortalidad }}%" 
+                                         aria-valuenow="{{ $porcentajeMortalidad }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ number_format($porcentajeMortalidad, 1) }}%
+                                    </div>
+                                </div>
+                                <small class="text-muted">Porcentaje de mortalidad del día</small>
                             </div>
                         </div>
                     </div>
@@ -441,6 +549,7 @@ $(document).ready(function() {
     $('#limpiar-filtros').on('click', function() {
         $('#filtro-produccion')[0].reset();
         $('#fecha-fin').val(new Date().toISOString().split('T')[0]);
+        $('#tipo_produccion').val('');
         $('#tipo_huevo').val('');
         cargarDatosProduccion();
     });
@@ -501,6 +610,7 @@ $(document).ready(function() {
         // Obtener parámetros del filtro
         const filtros = {
             galpon: $('#galpon').val(),
+            tipo_produccion: $('#tipo_produccion').val(),
             tipo_huevo: $('#tipo_huevo').val(),
             fecha_inicio: $('#fecha-inicio').val(),
             fecha_fin: $('#fecha-fin').val(),
@@ -559,38 +669,62 @@ $(document).ready(function() {
                         <span class="badge bg-primary">${formatearFecha(dato.fecha)}</span>
                     </td>
                     <td>
+                        <span class="badge bg-${dato.tipo_produccion === 'huevos' ? 'warning text-dark' : 'danger'}">
+                            ${dato.tipo_produccion === 'huevos' ? 'Huevos' : 'Carne'}
+                        </span>
+                    </td>
+                    <td>
                         <span class="badge bg-info">${dato.galpon}</span>
                     </td>
                     <td>
                         <span class="badge bg-${dato.tipo == 'A' ? 'success' : (dato.tipo == 'AA' ? 'warning' : 'secondary')}">${dato.tipo || 'N/A'}</span>
                     </td>
-                    <td>${dato.total_aves.toLocaleString()}</td>
                     <td>
-                        <strong class="text-primary">${dato.produccion.toLocaleString()}</strong>
+                        <strong class="text-primary">${(dato.cantidad || dato.produccion || 0).toLocaleString()}</strong>
                     </td>
                     <td>
-                        <span class="badge bg-success">${(dato.huevos_buenos || 0).toLocaleString()}</span>
+                        ${(dato.mortalidad_aves || 0) > 0 ? 
+                            `<span class="badge bg-danger"><i class="fas fa-heart-broken me-1"></i>${(dato.mortalidad_aves || 0).toLocaleString()}</span>` : 
+                            '<span class="text-muted">-</span>'
+                        }
                     </td>
                     <td>
-                        <span class="badge bg-danger">${(dato.huevos_rotos || 0).toLocaleString()}</span>
+                        ${dato.tipo_produccion === 'huevos' || !dato.tipo_produccion ? 
+                            `<span class="badge bg-success">${(dato.huevos_buenos || 0).toLocaleString()}</span>` : 
+                            '<span class="text-muted">-</span>'
+                        }
                     </td>
                     <td>
-                        <span class="badge bg-warning">${(dato.huevos_sucios || 0).toLocaleString()}</span>
+                        ${dato.tipo_produccion === 'huevos' || !dato.tipo_produccion ? 
+                            `<span class="badge bg-danger">${(dato.huevos_rotos || 0).toLocaleString()}</span>` : 
+                            '<span class="text-muted">-</span>'
+                        }
                     </td>
                     <td>
-                        <span class="badge bg-${dato.porcentaje > 90 ? 'success' : (dato.porcentaje > 80 ? 'warning' : 'danger')}">
-                            ${dato.porcentaje}%
-                        </span>
+                        ${dato.tipo_produccion === 'huevos' || !dato.tipo_produccion ? 
+                            `<span class="badge bg-warning">${(dato.huevos_sucios || 0).toLocaleString()}</span>` : 
+                            '<span class="text-muted">-</span>'
+                        }
                     </td>
-                    <td>${dato.peso_promedio} g</td>
-                    <td>${(dato.peso_total || 0).toFixed(1)} kg</td>
+                    <td>
+                        ${dato.tipo_produccion === 'carne' ? 
+                            `${(dato.peso_promedio || 0).toFixed(2)} kg` : 
+                            '<span class="text-muted">-</span>'
+                        }
+                    </td>
+                    <td>
+                        ${dato.tipo_produccion === 'carne' ? 
+                            `${(dato.peso_total || 0).toFixed(2)} kg` : 
+                            '<span class="text-muted">-</span>'
+                        }
+                    </td>
                     <td>$${(dato.valor_unidad || 0).toLocaleString()}</td>
                     <td>
                         <strong class="text-success">$${(dato.valor_total || 0).toLocaleString()}</strong>
                     </td>
                     <td>${dato.destino || 'N/A'}</td>
                     <td>
-                        <span class="badge bg-info">${dato.semana || 'N/A'}</span>
+                        <span class="badge bg-info">${dato.semana_produccion || dato.semana || 'N/A'}</span>
                     </td>
                     <td>
                         <span class="badge bg-${dato.estado == 'activo' ? 'success' : 'secondary'}">${(dato.estado || 'N/A').charAt(0).toUpperCase() + (dato.estado || 'N/A').slice(1)}</span>

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Modules\AVICONTROL\Entities\Production;
 use Modules\AVICONTROL\Entities\Galpon;
+use Modules\AVICONTROL\Entities\Bird;
 use Carbon\Carbon;
 use Dompdf\Facade as PDF;
 
@@ -125,6 +126,7 @@ class ProductionController extends Controller
             'galpon_id' => 'required|exists:avicontrol_poultry_facilities,id',
             'tipo' => 'required|in:A,AA,B,C,D',
             'cantidad' => 'required|integer|min:1',
+            'mortalidad_aves' => 'nullable|integer|min:0',
             'peso_promedio' => 'nullable|numeric|min:0',
             'peso_total' => 'nullable|numeric|min:0',
             'huevos_rotos' => 'nullable|integer|min:0',
@@ -163,6 +165,7 @@ class ProductionController extends Controller
                 'galpon_id' => $request->galpon_id,
                 'tipo' => $request->tipo,
                 'cantidad' => $request->cantidad,
+                'mortalidad_aves' => $request->mortalidad_aves ?? 0,
                 'peso_promedio' => $request->peso_promedio,
                 'peso_total' => $request->peso_total,
                 'huevos_rotos' => $request->huevos_rotos ?? 0,
@@ -176,6 +179,11 @@ class ProductionController extends Controller
                 'firma_lider' => $request->firma_lider,
                 'estado' => 'activo'
             ]);
+
+            // Actualizar automáticamente el galpón si hay mortalidad
+            if ($request->mortalidad_aves > 0) {
+                $this->actualizarMortalidadGalpon($request->galpon_id, $request->mortalidad_aves);
+            }
 
             DB::commit();
 
@@ -448,5 +456,44 @@ class ProductionController extends Controller
         $pdf = PDF::loadView('avicontrol::admin.production.report', compact('productions'));
         
         return $pdf->download('reporte_produccion_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Actualiza automáticamente la mortalidad en el galpón
+     * @param int $galponId
+     * @param int $mortalidad
+     */
+    private function actualizarMortalidadGalpon($galponId, $mortalidad)
+    {
+        try {
+            // Buscar el galpón
+            $galpon = Galpon::find($galponId);
+            if (!$galpon) {
+                \Log::warning("No se pudo encontrar el galpón ID: {$galponId} para actualizar mortalidad");
+                return;
+            }
+
+            // Buscar el registro de aves asociado al galpón
+            $bird = Bird::where('galpon_id', $galponId)
+                       ->orWhere('poultry_facility_id', $galponId)
+                       ->where('status', 'active')
+                       ->first();
+
+            if ($bird) {
+                // Actualizar la cantidad de aves restando la mortalidad
+                $nuevaCantidad = max(0, $bird->quantity - $mortalidad);
+                $bird->update([
+                    'quantity' => $nuevaCantidad,
+                    'mortality_rate' => $bird->mortality_rate + $mortalidad
+                ]);
+
+                \Log::info("Mortalidad actualizada en galpón {$galponId}: {$mortalidad} aves. Nueva cantidad: {$nuevaCantidad}");
+            } else {
+                \Log::warning("No se encontró registro de aves activas para el galpón ID: {$galponId}");
+            }
+
+        } catch (\Exception $e) {
+            \Log::error("Error al actualizar mortalidad en galpón {$galponId}: " . $e->getMessage());
+        }
     }
 }

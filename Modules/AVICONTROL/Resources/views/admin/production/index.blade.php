@@ -199,6 +199,7 @@
                                 <th>GALPÓN</th>
                                 <th>TIPO</th>
                                 <th>CANTIDAD</th>
+                                <th>MORTALIDAD</th>
                                 <th>PESO PROMEDIO</th>
                                 <th>PESO TOTAL</th>
                                 <th>HUEVOS ROTOS</th>
@@ -242,6 +243,13 @@
                                     </td>
                                     <td>
                                         <strong>{{ number_format($production->cantidad) }}</strong>
+                                    </td>
+                                    <td>
+                                        @if($production->mortalidad_aves > 0)
+                                            <span class="badge bg-danger">{{ number_format($production->mortalidad_aves) }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td>{{ $production->formatted_peso_promedio }}</td>
                                     <td>{{ $production->formatted_peso_total }}</td>

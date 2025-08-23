@@ -209,7 +209,10 @@ class InformationController extends Controller
                         'fecha' => $produccion->fecha,
                         'galpon' => $produccion->galpon ? $produccion->galpon->name : 'N/A',
                         'galpon_id' => $produccion->galpon_id,
+                        'tipo_produccion' => $produccion->tipo_produccion ?? 'huevos',
                         'tipo' => $produccion->tipo ?? 'N/A',
+                        'cantidad' => $produccion->cantidad ?? 0,
+                        'mortalidad_aves' => $produccion->mortalidad_aves ?? 0,
                         'total_aves' => $this->obtenerAvesEnGalpon($produccion->galpon_id, $produccion->fecha),
                         'produccion' => $produccion->cantidad ?? 0,
                         'huevos_buenos' => $produccion->cantidad - ($produccion->huevos_rotos ?? 0) - ($produccion->huevos_sucios ?? 0),
@@ -221,6 +224,7 @@ class InformationController extends Controller
                         'valor_unidad' => $produccion->valor_unidad ?? 0,
                         'valor_total' => $produccion->valor_total ?? 0,
                         'destino' => $produccion->destino ?? 'N/A',
+                        'semana_produccion' => $produccion->semana_produccion ?? 'N/A',
                         'semana' => $produccion->semana_produccion ?? 'N/A',
                         'estado' => $produccion->estado ?? 'N/A',
                         'observaciones' => $produccion->observaciones ?? 'Sin observaciones'
@@ -248,6 +252,10 @@ class InformationController extends Controller
             $produccionHoy = Production::whereDate('fecha', $hoy);
             $produccionHuevosHoy = $produccionHoy->where('tipo_produccion', 'huevos');
             
+            // Estadísticas de mortalidad del día
+            $mortalidadHoy = Production::whereDate('fecha', $hoy)->sum('mortalidad_aves') ?? 0;
+            $avesActivasHoy = Bird::where('status', 'active')->sum('quantity') ?? 0;
+            
             return [
                 'total_produccion' => Production::sum('cantidad') ?? 0,
                 'produccion_hoy' => $produccionHuevosHoy->sum('cantidad') ?? 0,
@@ -268,6 +276,10 @@ class InformationController extends Controller
                 'tipo_aa_hoy' => $produccionHuevosHoy->where('tipo', 'AA')->sum('cantidad') ?? 0,
                 'tipo_b_hoy' => $produccionHuevosHoy->where('tipo', 'B')->sum('cantidad') ?? 0,
                 'tipo_c_hoy' => $produccionHuevosHoy->where('tipo', 'C')->sum('cantidad') ?? 0,
+                
+                // Estadísticas de mortalidad
+                'mortalidad_hoy' => $mortalidadHoy,
+                'aves_activas_hoy' => $avesActivasHoy,
             ];
         } catch (\Exception $e) {
             \Log::error('Error obteniendo estadísticas de producción: ' . $e->getMessage());

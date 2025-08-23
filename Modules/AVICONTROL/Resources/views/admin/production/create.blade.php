@@ -104,6 +104,22 @@
                                 @enderror
                             </div>
 
+                            <!-- Mortalidad de Aves -->
+                            <div class="col-md-6">
+                                <label for="mortalidad_aves" class="form-label">
+                                    <i class="fas fa-heart-broken me-1"></i>Mortalidad de Aves
+                                </label>
+                                <input type="number" class="form-control @error('mortalidad_aves') is-invalid @enderror" 
+                                       name="mortalidad_aves" id="mortalidad_aves" value="{{ old('mortalidad_aves', 0) }}" 
+                                       min="0" step="1">
+                                <small class="form-text text-muted">
+                                    Número de aves que han fallecido (se actualizará automáticamente el galpón)
+                                </small>
+                                @error('mortalidad_aves')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <!-- Campos específicos para carne -->
                             @if($tipoProduccion === 'carne')
                                 <!-- Peso Promedio -->
