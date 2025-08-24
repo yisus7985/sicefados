@@ -44,10 +44,29 @@ class FoodConsumptionController extends Controller
      */
     public function create()
     {
-        $galpones = PoultryFacility::all();
+        $galpones = PoultryFacility::with('activeBirds')->get();
         $productos = InventoryProduct::where('category', 'alimentos')->active()->get();
         
         return view('avicontrol::admin.food_consumption.create', compact('galpones', 'productos'));
+    }
+
+    /**
+     * Obtener el número de aves activas de un galpón específico
+     */
+    public function getBirdsCount(Request $request)
+    {
+        $request->validate([
+            'galpon_id' => 'required|exists:avicontrol_poultry_facilities,id'
+        ]);
+
+        $galpon = PoultryFacility::with('activeBirds')->find($request->galpon_id);
+        $totalBirds = $galpon->total_active_birds;
+
+        return response()->json([
+            'success' => true,
+            'total_birds' => $totalBirds,
+            'message' => "El galpón {$galpon->name} tiene {$totalBirds} aves activas"
+        ]);
     }
 
     /**

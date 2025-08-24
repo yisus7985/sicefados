@@ -19,11 +19,8 @@
                     <a href="{{ route('avicontrol.admin.food_consumption.create') }}" class="btn btn-custom me-2">
                         <i class="fas fa-plus me-1"></i> Nuevo Consumo
                     </a>
-                    <a href="{{ route('avicontrol.admin.food_waste.create') }}" class="btn btn-custom-outline me-2">
-                        <i class="fas fa-exclamation-triangle me-1"></i> Registrar Merma
-                    </a>
-                    <a href="{{ route('avicontrol.admin.food_conversion.create') }}" class="btn btn-custom-outline">
-                        <i class="fas fa-calculator me-1"></i> Nueva Conversión
+                    <a href="{{ route('avicontrol.admin.food_consumption.index') }}" class="btn btn-custom-outline">
+                        <i class="fas fa-list me-1"></i> Ver Consumos
                     </a>
                 </div>
             </div>
@@ -73,28 +70,28 @@
             </div>
         </div>
 
-        <!-- Conversión Promedio -->
+        <!-- Consumo Este Mes -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card shadow h-100">
                 <div class="card-body text-center">
                     <div class="module-icon info mb-3">
-                        <i class="fas fa-exchange-alt"></i>
+                        <i class="fas fa-calendar-alt"></i>
                     </div>
-                    <h3 class="module-title">{{ number_format($promedioConversion, 2) }}</h3>
-                    <p class="module-description">Conversión Promedio</p>
+                    <h3 class="module-title">{{ number_format($consumoEsteMes, 0) }}</h3>
+                    <p class="module-description">Consumo Este Mes (kg)</p>
                 </div>
             </div>
         </div>
 
-        <!-- Mermas Totales -->
+        <!-- Total de Registros -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card shadow h-100">
                 <div class="card-body text-center">
                     <div class="module-icon warning mb-3">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <i class="fas fa-database"></i>
                     </div>
-                    <h3 class="module-title">{{ number_format($totalMermas, 0) }}</h3>
-                    <p class="module-description">Mermas Totales (kg)</p>
+                    <h3 class="module-title">{{ $totalRegistros ?? 0 }}</h3>
+                    <p class="module-description">Total de Registros</p>
                 </div>
             </div>
         </div>
@@ -102,36 +99,34 @@
 
     <!-- Gráficos y Estadísticas Detalladas -->
     <div class="row mb-4">
-        <!-- Mermas por Causa -->
+        <!-- Consumo por Galpón -->
         <div class="col-xl-6 col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Mermas por Causa</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Consumo por Galpón</h6>
                 </div>
                 <div class="card-body">
-                    @if($mermasPorCausa->count() > 0)
+                    @if($consumoPorGalpon->count() > 0)
                     <div class="table-responsive">
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th>Causa</th>
-                                    <th>Cantidad (kg)</th>
-                                    <th>Registros</th>
+                                    <th>Galpón</th>
+                                    <th>Consumo Total (kg)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($mermasPorCausa as $merma)
+                                @foreach($consumoPorGalpon as $consumo)
                                 <tr>
-                                    <td>{{ ucfirst(str_replace('_', ' ', $merma->causa_merma)) }}</td>
-                                    <td>{{ number_format($merma->cantidad_total, 1) }}</td>
-                                    <td>{{ $merma->total }}</td>
+                                    <td>{{ $consumo->galpon->name ?? 'N/A' }}</td>
+                                    <td>{{ number_format($consumo->total_consumo, 1) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                     @else
-                    <p class="text-muted text-center">No hay datos de mermas disponibles</p>
+                    <p class="text-muted text-center">No hay datos de consumo disponibles</p>
                     @endif
                 </div>
             </div>
@@ -213,44 +208,23 @@
             </div>
         </div>
 
-        <!-- Últimas Mermas -->
+        <!-- Estadísticas de Consumo -->
         <div class="col-xl-6 col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Últimas Mermas</h6>
-                    <a href="{{ route('avicontrol.admin.food_waste.index') }}" class="btn btn-custom btn-sm">
-                        Ver Todas
-                    </a>
+                    <h6 class="m-0 font-weight-bold text-primary">Estadísticas de Consumo</h6>
                 </div>
                 <div class="card-body">
-                    @if($ultimasMermas->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Galpón</th>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Causa</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($ultimasMermas as $merma)
-                                <tr>
-                                    <td>{{ $merma->fecha_registro->format('d/m/Y') }}</td>
-                                    <td>{{ $merma->galpon->name ?? 'N/A' }}</td>
-                                    <td>{{ $merma->producto->name ?? 'N/A' }}</td>
-                                    <td>{{ number_format($merma->cantidad_perdida, 1) }} kg</td>
-                                    <td>{{ ucfirst(str_replace('_', ' ', $merma->causa_merma)) }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="row text-center">
+                        <div class="col-md-6 mb-3">
+                            <h4 class="text-primary">{{ number_format($promedioConsumoDiario, 1) }}</h4>
+                            <p class="text-muted">Promedio Diario (kg)</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h4 class="text-success">{{ number_format($totalConsumo, 0) }}</h4>
+                            <p class="text-muted">Total Acumulado (kg)</p>
+                        </div>
                     </div>
-                    @else
-                    <p class="text-muted text-center">No hay registros de mermas recientes</p>
-                    @endif
                 </div>
             </div>
         </div>
@@ -273,20 +247,20 @@
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-success">{{ number_format($costoTotalMermas, 2) }}</h4>
-                                <p class="text-muted">Costo Total Mermas ($)</p>
+                                <h4 class="text-success">{{ number_format($promedioConsumoDiario, 1) }}</h4>
+                                <p class="text-muted">Promedio Diario (kg)</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-info">{{ number_format($porcentajeMermas, 2) }}%</h4>
-                                <p class="text-muted">Porcentaje de Mermas</p>
+                                <h4 class="text-info">{{ $ultimosConsumos->count() }}</h4>
+                                <p class="text-muted">Registros Recientes</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-warning">{{ $conversionesEsteMes }}</h4>
-                                <p class="text-muted">Conversiones Este Mes</p>
+                                <h4 class="text-warning">{{ $consumoPorGalpon->count() }}</h4>
+                                <p class="text-muted">Galpones Activos</p>
                             </div>
                         </div>
                     </div>
@@ -304,25 +278,19 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <a href="{{ route('avicontrol.admin.food_consumption.index') }}" class="btn btn-custom w-100">
                                 <i class="fas fa-list me-2"></i>
                                 Ver Consumos
                             </a>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ route('avicontrol.admin.food_conversion.index') }}" class="btn btn-custom w-100">
-                                <i class="fas fa-calculator me-2"></i>
-                                Ver Conversiones
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ route('avicontrol.admin.food_consumption.create') }}" class="btn btn-custom w-100">
+                                <i class="fas fa-plus me-2"></i>
+                                Nuevo Consumo
                             </a>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ route('avicontrol.admin.food_waste.index') }}" class="btn btn-custom w-100">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Ver Mermas
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <a href="{{ route('avicontrol.admin.food_consumption.estadisticas') }}" class="btn btn-custom w-100">
                                 <i class="fas fa-chart-bar me-2"></i>
                                 Estadísticas

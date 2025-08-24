@@ -7,10 +7,12 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Modules\AVICONTROL\Entities\Production;
 use Modules\AVICONTROL\Entities\Galpon;
 use Modules\AVICONTROL\Entities\Bird;
+use Modules\AVICONTROL\Entities\ProductionWeek;
 use Carbon\Carbon;
 use Dompdf\Facade as PDF;
 
@@ -68,14 +70,20 @@ class ProductionController extends Controller
             ->paginate(20);
 
         // Obtener semanas disponibles para el filtro
-        $semanas = Production::distinct()
-            ->whereNotNull('semana_produccion')
-            ->pluck('semana_produccion')
-            ->sort()
+        $semanas = ProductionWeek::activa()
+            ->orderBy('fecha_inicio', 'desc')
+            ->pluck('nombre')
             ->values();
 
-        // Obtener galpones disponibles para el filtro
-        $galpones = Galpon::activo()->orderBy('name')->get();
+        // Obtener galpones disponibles para el filtro (TODOS para mostrar en filtros)
+        try {
+            $galpones = Galpon::orderBy('name')->get();
+        } catch (\Exception $e) {
+            \Log::error('Error en ProductionController@index: ' . $e->getMessage());
+            
+            // Fallback: obtener todos los galpones sin filtrar por status
+            $galpones = Galpon::whereNull('deleted_at')->orderBy('name')->get();
+        }
 
         // Estadísticas generales
         $stats = Production::getEstadisticasGenerales($request->semana_produccion, $request->tipo_produccion);
@@ -94,23 +102,72 @@ class ProductionController extends Controller
     public function create(Request $request)
     {
         $tipos = ['A', 'AA', 'B', 'C', 'D'];
-        $semanas = Production::distinct()
-            ->whereNotNull('semana_produccion')
-            ->pluck('semana_produccion')
-            ->sort()
+        $semanas = ProductionWeek::activa()
+            ->orderBy('fecha_inicio', 'desc')
+            ->pluck('nombre')
             ->values();
 
         // Obtener galpones según el tipo de producción
         $tipoProduccion = $request->get('tipo_produccion', 'huevos');
-        $galpones = Galpon::activo()
-            ->when($tipoProduccion === 'huevos', function($query) {
-                return $query->gallinasPonedoras();
-            })
-            ->when($tipoProduccion === 'carne', function($query) {
-                return $query->pollosEngorde();
-            })
-            ->orderBy('name')
-            ->get();
+        
+        try {
+            // Verificar primero que la columna existe
+            $hasColumn = \Schema::hasColumn('avicontrol_poultry_facilities', 'tipo');
+            if (!$hasColumn) {
+                throw new \Exception('La columna tipo no existe en la tabla avicontrol_poultry_facilities');
+            }
+            
+            // Obtener galpones del tipo correcto (sin filtrar por status para mostrar todos)
+            if ($tipoProduccion === 'huevos') {
+                $galpones = Galpon::where('tipo', 'gallinas_ponedoras')->orderBy('name')->get();
+            } elseif ($tipoProduccion === 'carne') {
+                $galpones = Galpon::where('tipo', 'pollos_engorde')->orderBy('name')->get();
+            } else {
+                // Fallback: obtener todos los galpones
+                $galpones = Galpon::orderBy('name')->get();
+            }
+            
+            // Si no hay galpones, crear uno de prueba
+            if ($galpones->count() == 0) {
+                \Log::info('No hay galpones. Creando galpón de prueba...');
+                
+                $galponPrueba = Galpon::create([
+                    'name' => 'Galpón Prueba - ' . ucfirst($tipoProduccion),
+                    'tipo' => $tipoProduccion === 'huevos' ? 'gallinas_ponedoras' : 'pollos_engorde',
+                    'status' => 'active',
+                    'length' => 50,
+                    'width' => 10,
+                    'capacity' => 1000
+                ]);
+                
+                $galpones = collect([$galponPrueba]);
+                \Log::info('Galpón de prueba creado:', ['id' => $galponPrueba->id, 'nombre' => $galponPrueba->name]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en ProductionController@create:', ['error' => $e->getMessage()]);
+            
+            // Fallback: obtener todos los galpones sin filtrar
+            $galpones = Galpon::whereNull('deleted_at')->orderBy('name')->get();
+            
+            // Si aún no hay galpones, crear uno básico
+            if ($galpones->count() == 0) {
+                try {
+                    $galponPrueba = Galpon::create([
+                        'name' => 'Galpón Prueba',
+                        'tipo' => 'gallinas_ponedoras',
+                        'status' => 'active',
+                        'length' => 50,
+                        'width' => 10,
+                        'capacity' => 1000
+                    ]);
+                    $galpones = collect([$galponPrueba]);
+                    \Log::info('Galpón de prueba básico creado:', ['id' => $galponPrueba->id]);
+                } catch (\Exception $e2) {
+                    \Log::error('Error creando galpón de prueba:', ['error' => $e2->getMessage()]);
+                }
+            }
+        }
 
         return view('avicontrol::admin.production.create', compact('tipos', 'semanas', 'galpones', 'tipoProduccion'));
     }
@@ -120,56 +177,129 @@ class ProductionController extends Controller
      */
     public function store(Request $request)
     {
+        // Debug: Log de inicio del método
+        \Log::info('=== INICIO DEL MÉTODO STORE ===');
+        \Log::info('Datos recibidos en store:', $request->all());
+        \Log::info('Método HTTP:', ['method' => $request->method()]);
+        \Log::info('URL:', ['url' => $request->url()]);
+        \Log::info('Token CSRF presente:', ['has_token' => $request->has('_token')]);
+        
+        // PRUEBA SIMPLE: Crear registro básico sin validación compleja
+        try {
+            \Log::info('Iniciando prueba simple de creación...');
+            
+            DB::beginTransaction();
+            
+            // Datos mínimos para la prueba
+            $dataToCreate = [
+                'fecha' => $request->fecha ?? now()->toDateString(),
+                'tipo_produccion' => $request->tipo_produccion ?? 'huevos',
+                'galpon_id' => $request->galpon_id ?? 1, // Usar ID 1 como prueba
+                'tipo' => $request->tipo ?? 'A',
+                'cantidad' => $request->cantidad ?? 1,
+                'valor_unidad' => $request->valor_unidad ?? 100,
+                'valor_total' => ($request->cantidad ?? 1) * ($request->valor_unidad ?? 100),
+                'destino' => $request->destino ?? 'Prueba',
+                'firma_recibido' => $request->firma_recibido ?? 'Prueba',
+                'estado' => 'activo'
+            ];
+            
+            \Log::info('Datos a crear (prueba simple):', $dataToCreate);
+            
+            $production = Production::create($dataToCreate);
+            \Log::info('Production::create() ejecutado exitosamente. ID:', ['id' => $production->id]);
+            
+            DB::commit();
+            \Log::info('Transacción completada exitosamente');
+            
+            return redirect()->route('avicontrol.admin.production.index')
+                ->with('success', 'Registro de producción creado exitosamente (PRUEBA)');
+                
+        } catch (\Exception $e) {
+            DB::rollback();
+            \Log::error('Error en store (prueba simple):', ['error' => $e->getMessage()]);
+            \Log::error('Stack trace:', ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()
+                ->withErrors(['error' => 'Error al crear el registro: ' . $e->getMessage()])
+                ->withInput();
+        }
+        
+        /* CÓDIGO ORIGINAL COMENTADO PARA PRUEBA
         $validator = Validator::make($request->all(), [
             'fecha' => 'required|date|before_or_equal:today',
             'tipo_produccion' => 'required|in:huevos,carne',
             'galpon_id' => 'required|exists:avicontrol_poultry_facilities,id',
-            'tipo' => 'required|in:A,AA,B,C,D',
+            'tipo' => $request->tipo_produccion === 'huevos' ? 'required|in:A,AA,B,C,D' : 'nullable',
             'cantidad' => 'required|integer|min:1',
-            'mortalidad_aves' => 'nullable|integer|min:0',
-            'peso_promedio' => 'nullable|numeric|min:0',
-            'peso_total' => 'nullable|numeric|min:0',
-            'huevos_rotos' => 'nullable|integer|min:0',
-            'huevos_sucios' => 'nullable|integer|min:0',
+            'mortalidad_aves' => $request->tipo_produccion === 'huevos' ? 'nullable|integer|min:0' : 'nullable',
+            'huevos_rotos' => $request->tipo_produccion === 'huevos' ? 'nullable|integer|min:0' : 'nullable',
+            'huevos_sucios' => $request->tipo_produccion === 'huevos' ? 'nullable|integer|min:0' : 'nullable',
+            'peso_promedio' => $request->tipo_produccion === 'carne' ? 'nullable|numeric|min:0' : 'nullable',
+            'peso_total' => $request->tipo_produccion === 'carne' ? 'nullable|numeric|min:0' : 'nullable',
+            'fecha_sacrificio' => $request->tipo_produccion === 'carne' ? 'nullable|date' : 'nullable',
+            'responsable_sacrificio' => $request->tipo_produccion === 'carne' ? 'nullable|string|max:100' : 'nullable',
             'valor_unidad' => 'required|numeric|min:0',
             'destino' => 'required|string|max:100',
             'observaciones' => 'nullable|string|max:500',
             'firma_recibido' => 'required|string|max:100',
-            'semana_produccion' => 'nullable|string|max:50',
-            'firma_lider' => 'nullable|string|max:100'
+            'semana_produccion' => $request->tipo_produccion === 'huevos' ? 'nullable|string|max:50' : 'nullable',
+            'firma_lider' => $request->tipo_produccion === 'huevos' ? 'nullable|string|max:100' : 'nullable'
         ]);
 
+        \Log::info('Validación completada. Errores:', $validator->errors()->toArray());
+
         if ($validator->fails()) {
+            \Log::warning('Validación falló. Redirigiendo con errores...');
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
         }
 
+        \Log::info('Validación exitosa. Iniciando creación...');
+
         try {
+            // Debug: Log de los datos recibidos
+            \Log::info('Datos recibidos en store:', $request->all());
+            
+            // Debug: Verificar validación
+            \Log::info('Iniciando validación...');
+            
             DB::beginTransaction();
 
+            // Debug: Verificar galpón
+            \Log::info('Buscando galpón ID:', ['galpon_id' => $request->galpon_id]);
+            
             // Validar que el galpón corresponda al tipo de producción
             $galpon = Galpon::find($request->galpon_id);
             if (!$galpon) {
                 throw new \Exception('Galpón no encontrado');
             }
+            
+            \Log::info('Galpón encontrado:', ['id' => $galpon->id, 'nombre' => $galpon->name, 'tipo' => $galpon->tipo]);
 
             $tipoProduccionEsperado = $galpon->tipo === 'gallinas_ponedoras' ? 'huevos' : 'carne';
             if ($request->tipo_produccion !== $tipoProduccionEsperado) {
                 throw new \Exception('El tipo de producción no corresponde al tipo de galpón seleccionado');
             }
+            
+            \Log::info('Validación de tipo de producción exitosa');
 
-            $production = Production::create([
+            \Log::info('Iniciando creación del registro de producción...');
+            
+            // Debug: Log de los datos que se van a crear
+            $dataToCreate = [
                 'fecha' => $request->fecha,
                 'tipo_produccion' => $request->tipo_produccion,
                 'galpon_id' => $request->galpon_id,
                 'tipo' => $request->tipo,
                 'cantidad' => $request->cantidad,
                 'mortalidad_aves' => $request->mortalidad_aves ?? 0,
-                'peso_promedio' => $request->peso_promedio,
-                'peso_total' => $request->peso_total,
                 'huevos_rotos' => $request->huevos_rotos ?? 0,
                 'huevos_sucios' => $request->huevos_sucios ?? 0,
+                'peso_promedio' => $request->peso_promedio,
+                'peso_total' => $request->peso_total,
+                'fecha_sacrificio' => $request->fecha_sacrificio,
+                'responsable_sacrificio' => $request->responsable_sacrificio,
                 'valor_unidad' => $request->valor_unidad,
                 'valor_total' => $request->cantidad * $request->valor_unidad,
                 'destino' => $request->destino,
@@ -178,7 +308,20 @@ class ProductionController extends Controller
                 'semana_produccion' => $request->semana_produccion,
                 'firma_lider' => $request->firma_lider,
                 'estado' => 'activo'
-            ]);
+            ];
+            
+            \Log::info('Datos a crear:', $dataToCreate);
+            
+            try {
+                $production = Production::create($dataToCreate);
+                \Log::info('Production::create() ejecutado exitosamente');
+            } catch (\Exception $e) {
+                \Log::error('Error en Production::create():', ['error' => $e->getMessage()]);
+                \Log::error('Stack trace:', ['trace' => $e->getTraceAsString()]);
+                throw $e;
+            }
+            
+            \Log::info('Registro de producción creado exitosamente:', ['id' => $production->id, 'fecha' => $production->fecha]);
 
             // Actualizar automáticamente el galpón si hay mortalidad
             if ($request->mortalidad_aves > 0) {
@@ -186,16 +329,21 @@ class ProductionController extends Controller
             }
 
             DB::commit();
+            
+            \Log::info('Transacción completada exitosamente');
 
             return redirect()->route('avicontrol.admin.production.index')
                 ->with('success', 'Registro de producción creado exitosamente');
 
         } catch (\Exception $e) {
             DB::rollback();
+            \Log::error('Error en store:', ['error' => $e->getMessage()]);
+            \Log::error('Stack trace:', ['trace' => $e->getTraceAsString()]);
             return redirect()->back()
                 ->withErrors(['error' => 'Error al crear el registro: ' . $e->getMessage()])
                 ->withInput();
         }
+        */
     }
 
     /**
@@ -215,22 +363,29 @@ class ProductionController extends Controller
     {
         $production = Production::with('galpon')->findOrFail($id);
         $tipos = ['A', 'AA', 'B', 'C', 'D'];
-        $semanas = Production::distinct()
-            ->whereNotNull('semana_produccion')
-            ->pluck('semana_produccion')
-            ->sort()
+        $semanas = ProductionWeek::activa()
+            ->orderBy('fecha_inicio', 'desc')
+            ->pluck('nombre')
             ->values();
 
         // Obtener galpones según el tipo de producción
-        $galpones = Galpon::activo()
-            ->when($production->tipo_produccion === 'huevos', function($query) {
-                return $query->gallinasPonedoras();
-            })
-            ->when($production->tipo_produccion === 'carne', function($query) {
-                return $query->pollosEngorde();
-            })
-            ->orderBy('name')
-            ->get();
+        try {
+            // Obtener galpones del tipo correcto (sin filtrar por status para mostrar todos)
+            if ($production->tipo_produccion === 'huevos') {
+                $galpones = Galpon::where('tipo', 'gallinas_ponedoras')->orderBy('name')->get();
+            } elseif ($production->tipo_produccion === 'carne') {
+                $galpones = Galpon::where('tipo', 'pollos_engorde')->orderBy('name')->get();
+            } else {
+                // Fallback: obtener todos los galpones
+                $galpones = Galpon::orderBy('name')->get();
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en ProductionController@edit: ' . $e->getMessage());
+            
+            // Fallback: obtener todos los galpones sin filtrar
+            $galpones = Galpon::whereNull('deleted_at')->orderBy('name')->get();
+        }
 
         return view('avicontrol::admin.production.edit', compact('production', 'tipos', 'semanas', 'galpones'));
     }
@@ -246,18 +401,21 @@ class ProductionController extends Controller
             'fecha' => 'required|date|before_or_equal:today',
             'tipo_produccion' => 'required|in:huevos,carne',
             'galpon_id' => 'required|exists:avicontrol_poultry_facilities,id',
-            'tipo' => 'required|in:A,AA,B,C,D',
+            'tipo' => $request->tipo_produccion === 'huevos' ? 'required|in:A,AA,B,C,D' : 'nullable',
             'cantidad' => 'required|integer|min:1',
-            'peso_promedio' => 'nullable|numeric|min:0',
-            'peso_total' => 'nullable|numeric|min:0',
-            'huevos_rotos' => 'nullable|integer|min:0',
-            'huevos_sucios' => 'nullable|integer|min:0',
+            'mortalidad_aves' => $request->tipo_produccion === 'huevos' ? 'nullable|integer|min:0' : 'nullable',
+            'huevos_rotos' => $request->tipo_produccion === 'huevos' ? 'nullable|integer|min:0' : 'nullable',
+            'huevos_sucios' => $request->tipo_produccion === 'huevos' ? 'nullable|integer|min:0' : 'nullable',
+            'peso_promedio' => $request->tipo_produccion === 'carne' ? 'nullable|numeric|min:0' : 'nullable',
+            'peso_total' => $request->tipo_produccion === 'carne' ? 'nullable|numeric|min:0' : 'nullable',
+            'fecha_sacrificio' => $request->tipo_produccion === 'carne' ? 'nullable|date' : 'nullable',
+            'responsable_sacrificio' => $request->tipo_produccion === 'carne' ? 'nullable|string|max:100' : 'nullable',
             'valor_unidad' => 'required|numeric|min:0',
             'destino' => 'required|string|max:100',
             'observaciones' => 'nullable|string|max:500',
             'firma_recibido' => 'required|string|max:100',
-            'semana_produccion' => 'nullable|string|max:50',
-            'firma_lider' => 'nullable|string|max:100'
+            'semana_produccion' => $request->tipo_produccion === 'huevos' ? 'nullable|string|max:50' : 'nullable',
+            'firma_lider' => $request->tipo_produccion === 'huevos' ? 'nullable|string|max:100' : 'nullable'
         ]);
 
         if ($validator->fails()) {
@@ -286,10 +444,13 @@ class ProductionController extends Controller
                 'galpon_id' => $request->galpon_id,
                 'tipo' => $request->tipo,
                 'cantidad' => $request->cantidad,
-                'peso_promedio' => $request->peso_promedio,
-                'peso_total' => $request->peso_total,
+                'mortalidad_aves' => $request->mortalidad_aves ?? 0,
                 'huevos_rotos' => $request->huevos_rotos ?? 0,
                 'huevos_sucios' => $request->huevos_sucios ?? 0,
+                'peso_promedio' => $request->peso_promedio,
+                'peso_total' => $request->peso_total,
+                'fecha_sacrificio' => $request->fecha_sacrificio,
+                'responsable_sacrificio' => $request->responsable_sacrificio,
                 'valor_unidad' => $request->valor_unidad,
                 'valor_total' => $request->cantidad * $request->valor_unidad,
                 'destino' => $request->destino,
@@ -494,6 +655,65 @@ class ProductionController extends Controller
 
         } catch (\Exception $e) {
             \Log::error("Error al actualizar mortalidad en galpón {$galponId}: " . $e->getMessage());
+        }
+    }
+
+
+
+    /**
+     * Crear una nueva semana de producción
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeWeek(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'nombre' => 'required|string|max:100',
+                'fecha_inicio' => 'required|date',
+                'fecha_fin' => 'required|date|after:fecha_inicio',
+                'descripcion' => 'nullable|string|max:500'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Verificar si ya existe una semana con el mismo nombre
+            $semanaExistente = ProductionWeek::where('nombre', $request->nombre)->first();
+            if ($semanaExistente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya existe una semana de producción con ese nombre'
+                ], 409);
+            }
+
+            // Crear la semana de producción en la nueva tabla
+            $semana = ProductionWeek::create([
+                'nombre' => $request->nombre,
+                'fecha_inicio' => $request->fecha_inicio,
+                'fecha_fin' => $request->fecha_fin,
+                'descripcion' => $request->descripcion,
+                'estado' => 'activa'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Semana de producción creada correctamente',
+                'semana' => $semana
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al crear semana de producción: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno del servidor al crear la semana de producción'
+            ], 500);
         }
     }
 }

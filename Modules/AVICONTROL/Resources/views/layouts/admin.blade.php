@@ -222,8 +222,7 @@
             || request()->routeIs('avicontrol.admin.alerts.*')
             || request()->routeIs('avicontrol.admin.food.*')
             || request()->routeIs('avicontrol.admin.food_consumption.*')
-            || request()->routeIs('avicontrol.admin.food_conversion.*')
-            || request()->routeIs('avicontrol.admin.food_waste.*');
+            ;
     @endphp
     @if($isInventoryOrInformation)
         <style>
@@ -386,25 +385,10 @@
                     <i class="fas fa-egg"></i>
                     <span>Producción</span>
                 </a>
-                                               <div class="menu-item dropdown {{ request()->routeIs('avicontrol.admin.food.*') ? 'active' : '' }}" id="alimentacion-dropdown" style="cursor: pointer;">
-                        <i class="fas fa-utensils"></i>
-                        <span>Alimentación</span>
-                        <i class="fas fa-chevron-down ms-auto dropdown-arrow"></i>
-                    </div>
-                    <div class="submenu {{ request()->routeIs('avicontrol.admin.food.*') ? 'show' : '' }}" id="alimentacion-submenu">
-                        <a href="{{ route('avicontrol.admin.food_consumption.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.food_consumption.*') ? 'active' : '' }}" style="padding-left: 35px;">
-                            <i class="fas fa-weight"></i>
-                            <span>Consumo de Alimento</span>
-                        </a>
-                        <a href="{{ route('avicontrol.admin.food_conversion.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.food_conversion.*') ? 'active' : '' }}" style="padding-left: 35px;">
-                            <i class="fas fa-exchange-alt"></i>
-                            <span>Conversión Alimenticia</span>
-                        </a>
-                        <a href="{{ route('avicontrol.admin.food_waste.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.food_waste.*') ? 'active' : '' }}" style="padding-left: 35px;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>Control de Mermas</span>
-                        </a>
-                    </div>
+                <a href="{{ route('avicontrol.admin.food.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.food.*') ? 'active' : '' }}">
+                    <i class="fas fa-utensils"></i>
+                    <span>Alimentación</span>
+                </a>
                 <a href="{{ route('avicontrol.admin.production_costs.index') }}" class="menu-item {{ request()->routeIs('avicontrol.admin.production_costs.*') ? 'active' : '' }}">
                     <i class="fas fa-calculator"></i>
                     <span>Costos de Producción</span>
@@ -478,11 +462,11 @@
                                 <i class="fas fa-boxes me-1"></i> Inventario
                             </a>
                         </li>
-                                                 <li class="nav-item">
-                             <a class="nav-link" href="{{ route('avicontrol.admin.food.dashboard') }}">
-                                 <i class="fas fa-utensils me-1"></i> Alimentación
-                             </a>
-                         </li>
+                                                                         <li class="nav-item">
+                            <a class="nav-link" href="{{ route('avicontrol.admin.food_consumption.index') }}">
+                                <i class="fas fa-utensils me-1"></i> Alimentación
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('avicontrol.admin.poultry_facilities.index') }}">
                                 <i class="fas fa-warehouse me-1"></i> Instalaciones
@@ -580,45 +564,19 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- SweetAlert2 para notificaciones -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <!-- jQuery (if needed) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
-    <!-- JavaScript para el dropdown de Alimentación -->
+    <!-- JavaScript para el sidebar -->
     <script>
         $(document).ready(function() {
-            // Funcionalidad del dropdown de Alimentación
-            $('#alimentacion-dropdown').click(function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                var $dropdown = $(this);
-                var $submenu = $('#alimentacion-submenu');
-                
-                // Toggle del dropdown con animación
-                if ($dropdown.hasClass('active')) {
-                    // Cerrar el dropdown
-                    $dropdown.removeClass('active');
-                    $submenu.removeClass('show');
-                } else {
-                    // Abrir el dropdown
-                    $dropdown.addClass('active');
-                    $submenu.addClass('show');
-                }
-            });
-            
-            // Si estamos en una página de alimentación, mantener el dropdown abierto inicialmente
-            if (window.location.href.includes('food_consumption') || window.location.href.includes('food_conversion') || window.location.href.includes('food_waste')) {
-                $('#alimentacion-dropdown').addClass('active');
-                $('#alimentacion-submenu').addClass('show');
+            // Si estamos en una página de alimentación, mantener activo el menú
+            if (window.location.href.includes('food_consumption') || window.location.href.includes('food')) {
+                $('.menu-item[href*="food"]').addClass('active');
             }
-            
-            // Cerrar dropdown si se hace clic fuera de él
-            $(document).click(function(e) {
-                if (!$(e.target).closest('#alimentacion-dropdown, #alimentacion-submenu').length) {
-                    $('#alimentacion-dropdown').removeClass('active');
-                    $('#alimentacion-submenu').removeClass('show');
-                }
-            });
             
             // Asegurar que el sidebar esté visible en dispositivos móviles
             if (window.innerWidth <= 991) {

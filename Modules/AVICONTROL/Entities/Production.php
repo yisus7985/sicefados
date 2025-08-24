@@ -23,6 +23,8 @@ class Production extends Model
         'mortalidad_aves',
         'peso_promedio',
         'peso_total',
+        'fecha_sacrificio',
+        'responsable_sacrificio',
         'huevos_rotos',
         'huevos_sucios',
         'valor_unidad',
@@ -60,6 +62,7 @@ class Production extends Model
 
     protected $casts = [
         'fecha' => 'date',
+        'fecha_sacrificio' => 'date',
         'valor_unidad' => 'decimal:2',
         'valor_total' => 'decimal:2',
         'peso_promedio' => 'decimal:2',

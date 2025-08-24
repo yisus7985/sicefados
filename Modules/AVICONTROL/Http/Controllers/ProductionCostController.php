@@ -150,8 +150,8 @@ class ProductionCostController extends Controller
             DB::commit();
 
             Log::info('Production cost created successfully', ['id' => $productionCost->id]);
-            return redirect()->route('avicontrol.admin.production_costs.show', $productionCost->id)
-                ->with('success', 'Costo de producción creado exitosamente');
+            return redirect()->route('avicontrol.admin.production_costs.index')
+                ->with('success', '¡Costo de producción creado exitosamente! El registro ha sido guardado en la base de datos.');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -273,8 +273,8 @@ class ProductionCostController extends Controller
             DB::commit();
 
             Log::info('Production cost updated successfully', ['id' => $productionCost->id]);
-            return redirect()->route('avicontrol.admin.production_costs.show', $productionCost->id)
-                ->with('success', 'Costo de producción actualizado exitosamente');
+            return redirect()->route('avicontrol.admin.production_costs.index')
+                ->with('success', '¡Costo de producción actualizado exitosamente! Los cambios han sido guardados en la base de datos.');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -329,7 +329,8 @@ class ProductionCostController extends Controller
             $productionCost->save();
             
             Log::info('Production cost confirmed successfully', ['id' => $id]);
-            return redirect()->back()->with('success', 'Costo de producción confirmado exitosamente');
+            return redirect()->route('avicontrol.admin.production_costs.index')
+                ->with('success', '¡Costo de producción confirmado exitosamente! El estado ha sido actualizado a "Confirmado".');
 
         } catch (\Exception $e) {
             Log::error('Error confirming production cost: ' . $e->getMessage());
@@ -395,6 +396,44 @@ class ProductionCostController extends Controller
         } catch (\Exception $e) {
             Log::error('Error calculating costs from inventory: ' . $e->getMessage());
             return response()->json(['error' => 'Error al calcular costos desde inventario'], 500);
+        }
+    }
+
+    /**
+     * Get birds filtered by poultry facility
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getBirdsByFacility(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'poultry_facility_id' => 'required|exists:avicontrol_poultry_facilities,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 422);
+            }
+
+            $birds = Bird::where('poultry_facility_id', $request->poultry_facility_id)
+                        ->where('status', 'active')
+                        ->select('id', 'batch_code', 'batch_name', 'bird_type')
+                        ->get()
+                        ->map(function($bird) {
+                            return [
+                                'id' => $bird->id,
+                                'batch_code' => $bird->batch_code,
+                                'batch_name' => $bird->batch_name,
+                                'bird_type' => $bird->bird_type,
+                                'bird_type_name' => $bird->bird_type_name
+                            ];
+                        });
+
+            return response()->json(['success' => true, 'birds' => $birds]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting birds by facility: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al obtener los lotes por galpón'], 500);
         }
     }
 

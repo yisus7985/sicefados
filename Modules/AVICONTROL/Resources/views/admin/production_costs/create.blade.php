@@ -41,14 +41,24 @@
 
                                 <div class="form-group">
                                     <label for="bird_id">Lote de Aves</label>
-                                    <select name="bird_id" id="bird_id" class="form-control @error('bird_id') is-invalid @enderror">
-                                        <option value="">Seleccione un lote</option>
-                                        @foreach($birds as $bird)
-                                            <option value="{{ $bird->id }}" {{ old('bird_id') == $bird->id ? 'selected' : '' }}>
-                                                {{ $bird->batch_code }} - {{ $bird->bird_type_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="input-group">
+                                        <select name="bird_id" id="bird_id" class="form-control @error('bird_id') is-invalid @enderror">
+                                            <option value="">Seleccione un lote</option>
+                                            @foreach($birds as $bird)
+                                                <option value="{{ $bird->id }}" {{ old('bird_id') == $bird->id ? 'selected' : '' }}>
+                                                    {{ $bird->batch_code }} - {{ $bird->bird_type_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="input-group-append" id="bird_loading" style="display: none;">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted" id="bird_help_text">
+                                        Seleccione primero un galpón para filtrar los lotes disponibles
+                                    </small>
                                     @error('bird_id')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -82,7 +92,7 @@
                                 <div class="form-group">
                                     <label for="period_start">Fecha de Inicio *</label>
                                     <input type="date" name="period_start" id="period_start" class="form-control @error('period_start') is-invalid @enderror" 
-                                           value="{{ old('period_start') }}" required>
+                                           value="{{ old('period_start', date('Y-m-d')) }}" required>
                                     @error('period_start')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -351,9 +361,74 @@ $(document).ready(function() {
         }
     }
 
+    // Filtrar lotes por galpón seleccionado
+    function filterBirdsByFacility(facilityId) {
+        if (!facilityId) {
+            // Si no hay galpón seleccionado, mostrar todos los lotes
+            $('#bird_id option').show();
+            $('#bird_help_text').text('Seleccione primero un galpón para filtrar los lotes disponibles');
+            return;
+        }
+
+        // Mostrar indicador de carga
+        $('#bird_id').prop('disabled', true);
+        $('#bird_id').html('<option value="">Cargando lotes...</option>');
+        $('#bird_help_text').text('Cargando lotes del galpón seleccionado...');
+        $('#bird_loading').show();
+
+        $.ajax({
+            url: '{{ route("avicontrol.admin.production_costs.get_birds_by_facility") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                poultry_facility_id: facilityId
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Limpiar y agregar opción por defecto
+                    $('#bird_id').html('<option value="">Seleccione un lote</option>');
+                    
+                    if (response.birds.length > 0) {
+                        // Agregar las opciones filtradas
+                        response.birds.forEach(function(bird) {
+                            const optionText = bird.batch_code + ' - ' + bird.bird_type_name;
+                            const optionValue = bird.id;
+                            $('#bird_id').append('<option value="' + optionValue + '">' + optionText + '</option>');
+                        });
+                        $('#bird_help_text').text('Lotes cargados exitosamente. Seleccione uno de los disponibles.');
+                    } else {
+                        // Si no hay lotes disponibles
+                        $('#bird_id').html('<option value="">No hay lotes disponibles para este galpón</option>');
+                        $('#bird_help_text').text('No hay lotes registrados para el galpón seleccionado.');
+                    }
+                } else {
+                    $('#bird_id').html('<option value="">Error al cargar lotes</option>');
+                    $('#bird_help_text').text('Error al cargar los lotes. Intente nuevamente.');
+                }
+                
+                // Habilitar el select
+                $('#bird_id').prop('disabled', false);
+                $('#bird_loading').hide();
+            },
+            error: function() {
+                $('#bird_id').html('<option value="">Error al cargar lotes</option>');
+                $('#bird_id').prop('disabled', false);
+                $('#bird_help_text').text('Error al cargar los lotes. Intente nuevamente.');
+                $('#bird_loading').hide();
+                alert('Error al filtrar los lotes por galpón');
+            }
+        });
+    }
+
     // Event listeners para recalcular
     $('input[type="number"]').on('input', calculateTotalCost);
     $('#period_start, #period_end').on('change', calculatePeriodDuration);
+    
+    // Event listener para filtrar lotes cuando cambie el galpón
+    $('#poultry_facility_id').on('change', function() {
+        const facilityId = $(this).val();
+        filterBirdsByFacility(facilityId);
+    });
 
     // Calcular desde inventario
     $('#calculateFromInventory').click(function() {

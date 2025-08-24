@@ -11,8 +11,6 @@ use Modules\AVICONTROL\Http\Controllers\ProductionCostController;
 use Modules\AVICONTROL\Http\Controllers\ProfitabilityAnalysisController;
 use Modules\AVICONTROL\Http\Controllers\AlertController;
 use Modules\AVICONTROL\Http\Controllers\FoodConsumptionController;
-use Modules\AVICONTROL\Http\Controllers\FoodConversionController;
-use Modules\AVICONTROL\Http\Controllers\FoodWasteController;
 use Modules\AVICONTROL\Http\Controllers\ProductionController;
 
 Route::middleware(['web', 'lang'])->group(function () {
@@ -136,6 +134,9 @@ Route::middleware(['web', 'lang'])->group(function () {
             // AJAX para calcular costos desde inventario
             Route::post('production_costs/calculate-from-inventory', [ProductionCostController::class, 'calculateFromInventory'])->name('production_costs.calculate_from_inventory');
             Route::get('production_costs/summary', [ProductionCostController::class, 'getCostSummary'])->name('production_costs.summary');
+            
+            // AJAX para obtener lotes filtrados por galpón
+            Route::post('production_costs/get-birds-by-facility', [ProductionCostController::class, 'getBirdsByFacility'])->name('production_costs.get_birds_by_facility');
 
             // ✅ Rutas para análisis de rentabilidad (RF-014)
             Route::get('profitability_analysis', [ProfitabilityAnalysisController::class, 'index'])->name('profitability_analysis.index');
@@ -168,87 +169,38 @@ Route::middleware(['web', 'lang'])->group(function () {
             Route::delete('food_consumption/{id}', [FoodConsumptionController::class, 'destroy'])->name('food_consumption.destroy');
             Route::get('food_consumption/estadisticas', [FoodConsumptionController::class, 'estadisticas'])->name('food_consumption.estadisticas');
             Route::post('food_consumption/exportar', [FoodConsumptionController::class, 'exportar'])->name('food_consumption.exportar');
-
-            // ✅ Rutas para conversión alimenticia (RF-011)
-            Route::get('food_conversion', [FoodConversionController::class, 'index'])->name('food_conversion.index');
-            Route::get('food_conversion/create', [FoodConversionController::class, 'create'])->name('food_conversion.create');
-            Route::post('food_conversion', [FoodConversionController::class, 'store'])->name('food_conversion.store');
-            Route::post('food_conversion/calcular-automaticamente', [FoodConversionController::class, 'calcularAutomaticamente'])->name('food_conversion.calcular_automaticamente');
-            Route::get('food_conversion/reporte', [FoodConversionController::class, 'reporte'])->name('food_conversion.reporte');
-            Route::get('food_conversion/estadisticas', [FoodConversionController::class, 'estadisticas'])->name('food_conversion.estadisticas');
-        Route::get('food_conversion/test-chart', function() {
-            return view('avicontrol::admin.food_conversion.test_chart');
-        })->name('food_conversion.test_chart');
-        Route::get('food_conversion/estadisticas-simple', function() {
-            return view('avicontrol::admin.food_conversion.estadisticas_simple');
-        })->name('food_conversion.estadisticas_simple');
-            Route::post('food_conversion/exportar', [FoodConversionController::class, 'exportar'])->name('food_conversion.exportar');
-            Route::get('food_conversion/{id}', [FoodConversionController::class, 'show'])->name('food_conversion.show');
-            Route::get('food_conversion/{id}/edit', [FoodConversionController::class, 'edit'])->name('food_conversion.edit');
-            Route::put('food_conversion/{id}', [FoodConversionController::class, 'update'])->name('food_conversion.update');
-            Route::delete('food_conversion/{id}', [FoodConversionController::class, 'destroy'])->name('food_conversion.destroy');
-
-            // ✅ Rutas para control de mermas (RF-012)
-            Route::get('food_waste', [FoodWasteController::class, 'index'])->name('food_waste.index');
-            Route::get('food_waste/create', [FoodWasteController::class, 'create'])->name('food_waste.create');
-            Route::post('food_waste', [FoodWasteController::class, 'store'])->name('food_waste.store');
-            Route::get('food_waste/{id}', [FoodWasteController::class, 'show'])->name('food_waste.show');
-            Route::get('food_waste/{id}/edit', [FoodWasteController::class, 'edit'])->name('food_waste.edit');
-            Route::put('food_waste/{id}', [FoodWasteController::class, 'update'])->name('food_waste.update');
-            Route::delete('food_waste/{id}', [FoodWasteController::class, 'destroy'])->name('food_waste.destroy');
-            Route::get('food_waste/reporte', [FoodWasteController::class, 'reporte'])->name('food_waste.reporte');
-            Route::get('food_waste/estadisticas', [FoodWasteController::class, 'estadisticas'])->name('food_waste.estadisticas');
             
-            // SOLUCIÓN DEFINITIVA - Ruta directa para estadísticas
-            Route::get('food_waste/estadisticas-directo', function() {
-                return response()->file(public_path('estadisticas_mermas.html'));
-            })->name('food_waste.estadisticas_directo');
+            // AJAX para obtener número de aves por galpón
+            Route::post('food_consumption/get-birds-count', [FoodConsumptionController::class, 'getBirdsCount'])->name('food_consumption.get_birds_count');
+
+            // ✅ Ruta para alimentación (redirige directamente a consumo de alimento)
+            Route::get('food', function() {
+                return redirect()->route('avicontrol.admin.food_consumption.index');
+            })->name('food.index');
+
+
+
+
+            // Routes for Production management
+            Route::get('production', [ProductionController::class, 'index'])->name('production.index');
+            Route::get('production/create', [ProductionController::class, 'create'])->name('production.create');
+            Route::post('production', [ProductionController::class, 'store'])->name('production.store');
+            Route::get('production/{id}', [ProductionController::class, 'show'])->name('production.show');
+            Route::get('production/{id}/edit', [ProductionController::class, 'edit'])->name('production.edit');
+            Route::put('production/{id}', [ProductionController::class, 'update'])->name('production.update');
+            Route::delete('production/{id}', [ProductionController::class, 'destroy'])->name('production.destroy');
             
-            Route::get('food_waste/estadisticas-fix', function() {
-                return view('avicontrol::admin.food_waste.estadisticas');
-            })->name('food_waste.estadisticas_fix');
-            Route::get('food_waste/estadisticas-independiente', function() {
-                return view('avicontrol::admin.food_waste.estadisticas_independiente');
-            })->name('food_waste.estadisticas_independiente');
-            Route::get('food_waste/test-chart', function() {
-                return view('avicontrol::admin.food_waste.test_chart');
-            })->name('food_waste.test_chart');
-            Route::get('food_waste/estadisticas-simple', function() {
-                return view('avicontrol::admin.food_waste.estadisticas_simple');
-            })->name('food_waste.estadisticas_simple');
-            Route::get('food_waste/test-html', function() {
-                return response()->file('Modules/AVICONTROL/Resources/views/admin/food_waste/test_html.html');
-            })->name('food_waste.test_html');
-            Route::post('food_waste/exportar', [FoodWasteController::class, 'exportar'])->name('food_waste.exportar');
-            Route::get('food_waste/dashboard', [FoodWasteController::class, 'dashboard'])->name('food_waste.dashboard');
+            // Ruta para crear nueva semana de producción
+            Route::post('production/store-week', [ProductionController::class, 'storeWeek'])->name('production.store-week');
             
-            // Dashboard principal del módulo de alimentación
-            Route::get('food/dashboard', [FoodWasteController::class, 'dashboard'])->name('food.dashboard');
-
-
-
-
-            // ... existing code ...
-
-// Routes for Production management
-Route::get('production', [ProductionController::class, 'index'])->name('production.index');
-Route::get('production/create', [ProductionController::class, 'create'])->name('production.create');
-Route::post('production', [ProductionController::class, 'store'])->name('production.store');
-Route::get('production/{id}', [ProductionController::class, 'show'])->name('production.show');
-Route::get('production/{id}/edit', [ProductionController::class, 'edit'])->name('production.edit');
-Route::put('production/{id}', [ProductionController::class, 'update'])->name('production.update');
-Route::delete('production/{id}', [ProductionController::class, 'destroy'])->name('production.destroy');
-
-// Additional Production routes for dashboard and reports
-Route::get('production/dashboard', [ProductionController::class, 'dashboard'])->name('production.dashboard');
-Route::get('production/report', [ProductionController::class, 'report'])->name('production.report');
-Route::get('production/test-pdf', [ProductionController::class, 'testPdf'])->name('production.test_pdf');
-Route::post('production/bulk-action', [ProductionController::class, 'bulkAction'])->name('production.bulk-action');
-Route::get('production/stats', [ProductionController::class, 'getStats'])->name('production.stats');
-Route::get('production/trend', [ProductionController::class, 'getTrend'])->name('production.trend');
-Route::get('production/batches-by-facility', [ProductionController::class, 'getBatchesByFacility'])->name('production.batches-by-facility');
-
-// ... existing code ...
+            // Rutas adicionales de producción
+            Route::get('production/dashboard', [ProductionController::class, 'dashboard'])->name('production.dashboard');
+            Route::get('production/report', [ProductionController::class, 'report'])->name('production.report');
+            Route::get('production/test-pdf', [ProductionController::class, 'testPdf'])->name('production.test_pdf');
+            Route::post('production/bulk-action', [ProductionController::class, 'bulkAction'])->name('production.bulk-action');
+            Route::get('production/stats', [ProductionController::class, 'getStats'])->name('production.stats');
+            Route::get('production/trend', [ProductionController::class, 'getTrend'])->name('production.trend');
+            Route::get('production/batches-by-facility', [ProductionController::class, 'getBatchesByFacility'])->name('production.batches-by-facility');
         });
 
     });

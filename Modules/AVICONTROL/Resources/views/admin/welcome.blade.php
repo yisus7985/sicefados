@@ -567,10 +567,10 @@
                 <i class="fas fa-egg"></i>
                 <span>Producción</span>
             </a>
-                   <a href="{{ route('avicontrol.admin.food.dashboard') }}" class="menu-item">
-           <i class="fas fa-utensils"></i>
-           <span>Alimentación</span>
-            </a>
+                                       <a href="{{ route('avicontrol.admin.food_consumption.index') }}" class="menu-item">
+            <i class="fas fa-utensils"></i>
+            <span>Alimentación</span>
+             </a>
             <a href="{{ route('avicontrol.admin.production_costs.index') }}" class="menu-item">
                 <i class="fas fa-calculator"></i>
                 <span>Costos de Producción</span>
@@ -875,8 +875,8 @@
                     <i class="fas fa-utensils"></i>
                 </div>
                                  <h3 class="module-title">Alimentación</h3>
-                 <p class="module-description">Control de consumo, conversión alimenticia y mermas de alimento.</p>
-                 <a href="{{ route('avicontrol.admin.food.dashboard') }}" class="btn btn-custom">Acceder</a>
+                 <p class="module-description">Control de consumo de alimento para producción avícola.</p>
+                                            <a href="{{ route('avicontrol.admin.food_consumption.index') }}" class="btn btn-custom">Acceder</a>
             </div>
             
             <div class="module-card">
