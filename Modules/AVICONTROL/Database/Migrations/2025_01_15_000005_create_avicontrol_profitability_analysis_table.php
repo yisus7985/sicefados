@@ -45,8 +45,8 @@ class CreateAvicontrolProfitabilityAnalysisTable extends Migration
             
             // Índices y relaciones
             $table->foreign('production_cost_id')->references('id')->on('avicontrol_production_costs')->onDelete('cascade');
-            $table->index(['production_cost_id', 'analysis_period']);
-            $table->index(['period_start', 'period_end']);
+            $table->index(['production_cost_id', 'analysis_period'], 'profit_analysis_prod_period_idx');
+            $table->index(['period_start', 'period_end'], 'profit_analysis_period_idx');
             $table->index('status');
             $table->index('net_profit');
         });

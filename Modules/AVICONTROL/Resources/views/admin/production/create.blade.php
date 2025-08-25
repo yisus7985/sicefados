@@ -322,12 +322,6 @@
                                     <a href="{{ route('avicontrol.admin.production.index') }}" class="btn btn-secondary">
                                         <i class="fas fa-times me-2"></i>Cancelar
                                     </a>
-                                    <button type="button" class="btn btn-info" id="btnDebug">
-                                        <i class="fas fa-bug me-2"></i>Debug
-                                    </button>
-                                    <button type="button" class="btn btn-warning" id="btnTest">
-                                        <i class="fas fa-flask me-2"></i>Prueba Directa
-                                    </button>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-2"></i>Guardar Registro
                                     </button>
@@ -440,82 +434,7 @@ $(document).ready(function() {
         });
     @endif
 
-    // Botón de prueba directa
-    $('#btnTest').on('click', function() {
-        console.log('=== PRUEBA DIRECTA ===');
-        
-        // Crear datos de prueba
-        const testData = {
-            fecha: '{{ date("Y-m-d") }}',
-            tipo_produccion: '{{ $tipoProduccion }}',
-            galpon_id: $('#galpon_id').val() || 1,
-            tipo: $('#tipo').val() || 'A',
-            cantidad: $('#cantidad').val() || 1,
-            valor_unidad: $('#valor_unidad').val() || 100,
-            destino: $('#destino').val() || 'Prueba',
-            firma_recibido: $('#firma_recibido').val() || 'Prueba',
-            _token: $('meta[name="csrf-token"]').attr('content')
-        };
-        
-        console.log('Datos de prueba:', testData);
-        
-        // Enviar petición AJAX
-        $.ajax({
-            url: '{{ route("avicontrol.admin.production.store") }}',
-            method: 'POST',
-            data: testData,
-            success: function(response) {
-                console.log('Respuesta exitosa:', response);
-                alert('¡Prueba exitosa! Revisa la consola para más detalles.');
-                // Redirigir al index
-                window.location.href = '{{ route("avicontrol.admin.production.index") }}';
-            },
-            error: function(xhr, status, error) {
-                console.error('Error en la prueba:', xhr.responseText);
-                alert('Error en la prueba: ' + error + '\nRevisa la consola para más detalles.');
-            }
-        });
-    });
 
-    // Botón de debug
-    $('#btnDebug').on('click', function() {
-        console.log('=== DEBUG DEL FORMULARIO ===');
-        console.log('Formulario ID:', $('#productionForm').attr('id'));
-        console.log('Action del formulario:', $('#productionForm').attr('action'));
-        console.log('Método del formulario:', $('#productionForm').attr('method'));
-        
-        // Verificar todos los campos
-        const fields = ['fecha', 'galpon_id', 'tipo', 'cantidad', 'valor_unidad', 'destino', 'firma_recibido'];
-        fields.forEach(function(field) {
-            const element = $('#' + field);
-            const value = element.val();
-            const required = element.prop('required');
-            console.log(`Campo ${field}:`, {
-                valor: value,
-                requerido: required,
-                existe: element.length > 0,
-                clase: element.attr('class')
-            });
-        });
-        
-        // Verificar token CSRF
-        const token = $('meta[name="csrf-token"]').attr('content');
-        console.log('Token CSRF:', token ? 'Presente' : 'Ausente');
-        
-        // Simular envío del formulario
-        console.log('Simulando envío del formulario...');
-        const formData = $('#productionForm').serialize();
-        console.log('Datos serializados:', formData);
-        
-        // Verificar si hay errores de validación
-        const errors = $('.is-invalid');
-        console.log('Campos con errores:', errors.length);
-        errors.each(function(index, element) {
-            console.log('Error en campo:', element.id);
-        });
-        
-        console.log('=== FIN DEBUG ===');
-    });
 
     // Validación de formulario
     $('#productionForm').on('submit', function(e) {

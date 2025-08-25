@@ -175,15 +175,11 @@
                                                     </button>
                                                 </form>
                                             @endif
-                                            <form action="{{ route('avicontrol.admin.production_costs.destroy', $cost->id) }}" 
-                                                  method="POST" style="display: inline;" 
-                                                  onsubmit="return confirm('¿Está seguro de eliminar este costo?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" class="btn btn-sm btn-danger delete-cost-btn" 
+                                                    title="Eliminar" data-cost-id="{{ $cost->id }}" 
+                                                    data-cost-name="{{ $cost->poultryFacility->name ?? 'N/A' }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -209,6 +205,12 @@
 </div>
 @endsection
 
+<!-- Formulario oculto para eliminación -->
+<form id="delete-cost-form" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
+
 @section('scripts')
 <script>
 $(document).ready(function() {
@@ -219,6 +221,23 @@ $(document).ready(function() {
     setTimeout(function() {
         $('.alert-success, .alert-danger, .alert-warning').fadeOut('slow');
     }, 5000);
+    
+    // Manejar eliminación de costos
+    $('.delete-cost-btn').on('click', function() {
+        const costId = $(this).data('cost-id');
+        const costName = $(this).data('cost-name');
+        
+        if (confirm(`¿Está seguro de eliminar el costo del galpón "${costName}"?\n\nEsta acción no se puede deshacer.`)) {
+            const form = $('#delete-cost-form');
+            form.attr('action', '{{ route("avicontrol.admin.production_costs.destroy", ":id") }}'.replace(':id', costId));
+            form.submit();
+        }
+    });
+    
+    // Confirmar cambios de estado
+    $('form[action*="/confirm"]').on('submit', function() {
+        return confirm('¿Está seguro de confirmar este costo de producción?\n\nUna vez confirmado, no se podrá editar.');
+    });
 });
 </script>
 @endsection

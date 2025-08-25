@@ -21,13 +21,7 @@
                     </a>
                     <a href="{{ route('avicontrol.admin.production.create', ['tipo_produccion' => 'carne']) }}" class="btn btn-success">
                         <i class="fas fa-plus me-2"></i>Nuevo Carne
-                    </a>
-                    <a href="{{ route('avicontrol.admin.production.dashboard') }}" class="btn btn-info">
-                        <i class="fas fa-chart-line me-2"></i>Dashboard
-                    </a>
-                    <a href="{{ route('avicontrol.admin.production.report') }}" class="btn btn-warning">
-                        <i class="fas fa-file-pdf me-2"></i>Reporte PDF
-                    </a>
+                        </a>
                 </div>
             </div>
         </div>
