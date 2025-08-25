@@ -34,9 +34,6 @@
                     <a href="{{ route('avicontrol.admin.inventory.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus me-1"></i> Nuevo Producto
                     </a>
-                    <a href="{{ route('avicontrol.admin.inventory.movements.index') }}" class="btn btn-outline-primary ms-2">
-                        <i class="fas fa-exchange-alt me-1"></i> Movimientos
-                    </a>
                 </div>
             </div>
             <!-- Stats Cards -->
@@ -131,12 +128,7 @@
                                         Ver Por Vencer
                                     </a>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <a href="{{ route('avicontrol.admin.inventory.movements.index') }}" class="btn btn-info btn-block">
-                                        <i class="fas fa-exchange-alt me-2"></i>
-                                        Ver Movimientos
-                                    </a>
-                                </div>
+                                <!-- Botón de movimientos removido temporalmente -->
                                 <div class="col-md-3 mb-3">
                                     <a href="{{ route('avicontrol.admin.inventory.create') }}" class="btn btn-success btn-block">
                                         <i class="fas fa-plus me-2"></i>
@@ -220,10 +212,7 @@
                                                class="btn btn-sm btn-outline-warning" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{{ route('avicontrol.admin.inventory.movements.create', $product->id) }}" 
-                                               class="btn btn-sm btn-outline-info" title="Registrar movimiento">
-                                                <i class="fas fa-exchange-alt"></i>
-                                            </a>
+                                            <!-- Botón de movimiento removido temporalmente -->
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
                                                     onclick="deleteProduct({{ $product->id }})" title="Eliminar">
                                                 <i class="fas fa-trash"></i>

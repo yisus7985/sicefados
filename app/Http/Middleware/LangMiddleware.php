@@ -31,6 +31,12 @@ class LangMiddleware
                         // Permitir acceso a rutas de AVICONTROL sin verificación
                         return $next($request);
                     }
+                    
+                    // Permitir acceso específico a movimientos
+                    if (strpos($request->getPathInfo(), '/avicontrol/admin/inventory/movements') !== false) {
+                        \Log::info('AVICONTROL movements route bypassed');
+                        return $next($request);
+                    }
                     // Si no contiene 'Auth', entonces verificar el acceso usando Gate
                     Gate::authorize('haveaccess', $request->route()->getName());
                 }

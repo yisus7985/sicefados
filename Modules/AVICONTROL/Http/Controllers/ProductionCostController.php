@@ -175,7 +175,8 @@ class ProductionCostController extends Controller
             $productionCost = ProductionCost::with([
                 'poultryFacility', 
                 'bird', 
-                'costComponents'
+                'costComponents',
+                'profitabilityAnalysis'
             ])->findOrFail($id);
             
             return view('avicontrol::admin.production_costs.show', compact('productionCost'));

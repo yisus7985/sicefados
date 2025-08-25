@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Panel de Administración - AVICONTROL</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -631,7 +632,7 @@
                     <i class="fas fa-warehouse"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>12</h3>
+                    <h3>{{ $estadisticas['instalaciones_activas'] }}</h3>
                     <p>Instalaciones Activas</p>
                 </div>
             </div>
@@ -641,7 +642,7 @@
                     <i class="fas fa-egg"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>2,500</h3>
+                    <h3>{{ number_format($estadisticas['produccion_diaria']) }}</h3>
                     <p>Producción Diaria (Huevos)</p>
                 </div>
             </div>
@@ -651,7 +652,7 @@
                     <i class="fas fa-percentage"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>85%</h3>
+                    <h3>{{ $estadisticas['tasa_postura'] }}%</h3>
                     <p>Tasa de Postura</p>
                 </div>
             </div>
@@ -661,7 +662,7 @@
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>{{ count($dashboardAlerts) }}</h3>
+                    <h3>{{ $estadisticas['alertas_pendientes'] }}</h3>
                     <p>Alertas Pendientes</p>
                 </div>
             </div>
@@ -741,8 +742,8 @@
                 <div class="card-header">
                     <h5 class="card-title">Resumen de Producción</h5>
                     <div>
-                        <button class="btn btn-custom-outline btn-sm">
-                            <i class="fas fa-download"></i> Exportar
+                        <button class="btn btn-custom-outline btn-sm" onclick="exportarDashboardPDF()">
+                            <i class="fas fa-download"></i> Exportar PDF
                         </button>
                     </div>
                 </div>
@@ -927,15 +928,17 @@
             document.getElementById('sidebar').classList.toggle('expanded');
         });
         
-        // Production Chart
+        // Production Chart con datos reales
         const productionCtx = document.getElementById('productionChart').getContext('2d');
+        const datosProduccion = @json($datosProduccion);
+        
         const productionChart = new Chart(productionCtx, {
             type: 'line',
             data: {
-                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                labels: datosProduccion.labels,
                 datasets: [{
                     label: 'Producción Diaria (Huevos)',
-                    data: [2300, 2450, 2380, 2500, 2600, 2400, 2350],
+                    data: datosProduccion.data,
                     backgroundColor: 'rgba(77, 124, 15, 0.1)',
                     borderColor: 'rgba(77, 124, 15, 1)',
                     pointBackgroundColor: 'rgba(77, 124, 15, 1)',
@@ -943,22 +946,33 @@
                     pointHoverBackgroundColor: '#fff',
                     pointHoverBorderColor: 'rgba(77, 124, 15, 1)',
                     borderWidth: 2,
-                    tension: 0.3
+                    tension: 0.3,
+                    fill: true
                 }]
             },
             options: {
                 maintainAspectRatio: false,
+                responsive: true,
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Producción: ' + context.parsed.y.toLocaleString() + ' huevos';
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: false,
-                        min: 2000,
+                        beginAtZero: true,
                         ticks: {
-                            maxTicksLimit: 5
+                            maxTicksLimit: 5,
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
                         }
                     },
                     x: {
@@ -1005,6 +1019,79 @@
         
         // Actualizar contador cada 30 segundos
         setInterval(updateAlertCount, 30000);
+        
+        // Función para exportar dashboard a PDF
+        function exportarDashboardPDF() {
+            // Mostrar indicador de carga
+            const btnExportar = document.querySelector('button[onclick="exportarDashboardPDF()"]');
+            const textoOriginal = btnExportar.innerHTML;
+            btnExportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+            btnExportar.disabled = true;
+            
+            // Realizar petición para generar PDF
+            fetch('{{ route("avicontrol.admin.dashboard.export-pdf") }}', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/pdf',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Error al generar PDF');
+            })
+            .then(blob => {
+                // Crear URL para descargar el archivo
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'dashboard_avicontrol_' + new Date().toISOString().slice(0, 10) + '.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                // Mostrar notificación de éxito
+                showNotification('PDF generado exitosamente', 'success');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error al generar PDF: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Restaurar botón
+                btnExportar.innerHTML = textoOriginal;
+                btnExportar.disabled = false;
+            });
+        }
+        
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
     </script>
+    
+    <!-- Chatbot AI Assistant -->
+    @include('avicontrol::components.chatbot')
 </body>
 </html>

@@ -597,6 +597,9 @@
         });
     </script>
     
+    <!-- Chatbot AI Assistant -->
+    @include('avicontrol::components.chatbot')
+    
     @stack('scripts')
 </body>
 </html> 

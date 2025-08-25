@@ -12,6 +12,7 @@ use Modules\AVICONTROL\Http\Controllers\ProfitabilityAnalysisController;
 use Modules\AVICONTROL\Http\Controllers\AlertController;
 use Modules\AVICONTROL\Http\Controllers\FoodConsumptionController;
 use Modules\AVICONTROL\Http\Controllers\ProductionController;
+use Modules\AVICONTROL\Http\Controllers\ChatbotController;
 
 Route::middleware(['web', 'lang'])->group(function () {
 
@@ -31,6 +32,15 @@ Route::middleware(['web', 'lang'])->group(function () {
 
         // Vista de bienvenida para administradores
         Route::get('/admin/welcome', [AVICONTROLController::class, 'admin'])->name('avicontrol.admin.welcome');
+        
+        // Exportar dashboard a PDF
+        Route::get('/admin/dashboard/export-pdf', [AVICONTROLController::class, 'exportDashboardPDF'])->name('avicontrol.admin.dashboard.export-pdf');
+        
+        // Chatbot AI Routes
+        Route::get('/admin/chatbot/test', [ChatbotController::class, 'test'])->name('avicontrol.admin.chatbot.test');
+        Route::post('/admin/chatbot/chat', [ChatbotController::class, 'chat'])->name('avicontrol.admin.chatbot.chat');
+        Route::get('/admin/chatbot/history', [ChatbotController::class, 'getHistory'])->name('avicontrol.admin.chatbot.history');
+        Route::delete('/admin/chatbot/history', [ChatbotController::class, 'clearHistory'])->name('avicontrol.admin.chatbot.clear');
 
         // Ruta específica de logout para AVICONTROL
         Route::post('/admin/logout', function () {
@@ -115,6 +125,15 @@ Route::middleware(['web', 'lang'])->group(function () {
 
             // ✅ Rutas para inventario
             Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+            
+            // Ruta de prueba para debugging
+            Route::get('inventory/test-movements', function() {
+                return response()->json([
+                    'message' => 'Test route works',
+                    'timestamp' => now(),
+                    'route_name' => 'avicontrol.admin.inventory.test-movements'
+                ]);
+            })->name('inventory.test-movements');
             Route::get('inventory/create', [InventoryController::class, 'create'])->name('inventory.create');
             Route::post('inventory', [InventoryController::class, 'store'])->name('inventory.store');
             Route::get('inventory/{id}', [InventoryController::class, 'show'])->name('inventory.show');
@@ -126,6 +145,13 @@ Route::middleware(['web', 'lang'])->group(function () {
             Route::get('inventory/{id}/movements/create', [InventoryController::class, 'createMovement'])->name('inventory.movements.create');
             Route::post('inventory/{id}/movements', [InventoryController::class, 'storeMovement'])->name('inventory.movements.store');
             Route::get('inventory/movements', [InventoryController::class, 'movements'])->name('inventory.movements.index');
+            Route::get('inventory/movements/stats', [InventoryController::class, 'getMovementStats'])->name('inventory.movements.stats');
+            
+            // Ruta de respaldo simple para debugging
+            Route::get('inventory/movements-simple', function() {
+                \Log::info('Simple movements route accessed');
+                return view('avicontrol::admin.inventory.movements.simple');
+            })->name('inventory.movements.simple');
             
             // Rutas para alertas
             Route::get('inventory/alerts/low-stock', [InventoryController::class, 'lowStock'])->name('inventory.low_stock');

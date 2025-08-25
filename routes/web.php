@@ -22,6 +22,8 @@ Route::get('/mermas-estadisticas-directo', function() {
     return response()->file(public_path('estadisticas_mermas.html'));
 })->name('mermas.estadisticas.directo');
 
+// Ruta eliminada - usando la ruta original del módulo AVICONTROL
+
 Route::middleware(['lang'])->group(function(){
 
     Auth::routes();
@@ -108,6 +110,8 @@ Route::middleware(['lang'])->group(function(){
     // SOLUCIÓN CON CONTROLADOR
     Route::get('/estadisticas-mermas-controller', [App\Http\Controllers\EstadisticasController::class, 'mermas'])
         ->name('estadisticas.mermas.controller');
+
+    // Ruta de emergencia eliminada - usando la ruta original del módulo
 
 });
 

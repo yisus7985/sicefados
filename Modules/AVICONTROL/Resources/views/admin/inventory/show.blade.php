@@ -17,12 +17,10 @@
             <a href="{{ route('avicontrol.admin.inventory.index') }}" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left me-1"></i> Volver al Inventario
             </a>
-            <a href="{{ route('avicontrol.admin.inventory.edit', $product->id) }}" class="btn btn-warning me-2">
+            <a href="{{ route('avicontrol.admin.inventory.edit', $product->id) }}" class="btn btn-warning">
                 <i class="fas fa-edit me-1"></i> Editar
             </a>
-            <a href="{{ route('avicontrol.admin.inventory.movements.create', $product->id) }}" class="btn btn-primary">
-                <i class="fas fa-exchange-alt me-1"></i> Registrar Movimiento
-            </a>
+            <!-- Botón de movimiento removido temporalmente -->
         </div>
     </div>
 
@@ -175,14 +173,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('avicontrol.admin.inventory.movements.create', $product->id) }}" 
-                           class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus me-1"></i> Entrada de Stock
-                        </a>
-                        <a href="{{ route('avicontrol.admin.inventory.movements.create', $product->id) }}?type=exit" 
-                           class="btn btn-warning btn-sm">
-                            <i class="fas fa-minus me-1"></i> Salida de Stock
-                        </a>
+                        <!-- Botones de movimientos removidos temporalmente -->
                         <a href="{{ route('avicontrol.admin.inventory.edit', $product->id) }}" 
                            class="btn btn-info btn-sm">
                             <i class="fas fa-edit me-1"></i> Editar Producto
@@ -191,125 +182,12 @@
                 </div>
             </div>
 
-            <!-- Recent Movements -->
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Movimientos Recientes</h6>
-                </div>
-                <div class="card-body">
-                    @forelse($product->movements->take(5) as $movement)
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <small class="text-muted">{{ $movement->movement_date->format('d/m/Y H:i') }}</small>
-                                <br>
-                                <span class="badge badge-{{ $movement->isEntry() ? 'success' : ($movement->isExit() ? 'danger' : 'info') }}">
-                                    {{ $movement->movement_type_name }}
-                                </span>
-                                <small>{{ $movement->quantity }} {{ $product->unit_measure }}</small>
-                            </div>
-                            <div class="text-end">
-                                <small class="text-muted">${{ number_format($movement->total_value, 2) }}</small>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-muted text-center">No hay movimientos registrados</p>
-                    @endforelse
-                    
-                    @if($product->movements->count() > 5)
-                        <div class="text-center mt-3">
-                            <a href="{{ route('avicontrol.admin.inventory.movements.index') }}?product_id={{ $product->id }}" 
-                               class="btn btn-outline-primary btn-sm">
-                                Ver Todos los Movimientos
-                            </a>
-                        </div>
-                    @endif
-                </div>
-            </div>
+            <!-- Sección de movimientos removida temporalmente -->
         </div>
     </div>
 
-    <!-- Movements Table -->
-    <div class="card shadow">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Historial de Movimientos</h6>
-            <a href="{{ route('avicontrol.admin.inventory.movements.create', $product->id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Nuevo Movimiento
-            </a>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Tipo</th>
-                            <th>Referencia</th>
-                            <th>Cantidad</th>
-                            <th>Precio Unitario</th>
-                            <th>Valor Total</th>
-                            <th>Usuario</th>
-                            <th>Notas</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($movements as $movement)
-                        <tr>
-                            <td>{{ $movement->movement_date->format('d/m/Y H:i') }}</td>
-                            <td>
-                                <span class="badge badge-{{ $movement->isEntry() ? 'success' : ($movement->isExit() ? 'danger' : 'info') }}">
-                                    {{ $movement->movement_type_name }}
-                                </span>
-                            </td>
-                            <td>{{ $movement->reference_name }}</td>
-                            <td>{{ $movement->quantity }} {{ $product->unit_measure }}</td>
-                            <td>${{ number_format($movement->unit_price, 2) }}</td>
-                            <td>${{ number_format($movement->total_value, 2) }}</td>
-                            <td>{{ $movement->user->name ?? 'N/A' }}</td>
-                            <td>{{ $movement->notes ?: '-' }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-center">No hay movimientos registrados</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Pagination -->
-            <div class="d-flex justify-content-center">
-                {{ $movements->links() }}
-            </div>
-        </div>
-    </div>
+    <!-- Tabla de movimientos removida temporalmente -->
 </div>
 @endsection
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Stock Chart
-    const ctx = document.getElementById('stockChart').getContext('2d');
-    const stockChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($product->movements->pluck('movement_date')->map(function($date) { return $date->format('d/m'); })->reverse()) !!},
-            datasets: [{
-                label: 'Stock',
-                data: {!! json_encode($product->movements->pluck('quantity')->reverse()) !!},
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-</script>
-@endpush 
+{{-- Scripts de gráficos removidos temporalmente --}} 
