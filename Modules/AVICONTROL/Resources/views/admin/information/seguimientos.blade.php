@@ -7,100 +7,20 @@
 @endpush
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Seguimientos de Galpón</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('avicontrol.admin.welcome') }}">Inicio</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('avicontrol.admin.information.index') }}">Información</a></li>
-                        <li class="breadcrumb-item active">Seguimientos</li>
-                    </ol>
-                </div>
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="page-title">
+                    <i class="fas fa-chart-line text-primary me-3"></i>
+                    Seguimientos de Galpón
+                </h2>
+                <p class="text-muted mb-0">Sistema de monitoreo y análisis de crecimiento avícola</p>
             </div>
         </div>
-    </section>
-
-    <section class="content">
-        <div class="container-fluid">
-            <!-- Filtros -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-filter mr-2"></i>
-                        Filtros de Seguimiento
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <form id="filtro-seguimientos">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="galpon">Galpón</label>
-                                    <select class="form-control" id="galpon" name="galpon">
-                                        <option value="">Todos los galpones</option>
-                                        <!-- Se llenará dinámicamente -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="lote">Lote</label>
-                                    <select class="form-control" id="lote" name="lote">
-                                        <option value="">Todos los lotes</option>
-                                        <!-- Se llenará dinámicamente -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="fecha-inicio">Fecha Inicio</label>
-                                    <input type="date" class="form-control" id="fecha-inicio" name="fecha_inicio">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="fecha-fin">Fecha Fin</label>
-                                    <input type="date" class="form-control" id="fecha-fin" name="fecha_fin">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="edad-min">Edad Mínima (días)</label>
-                                    <input type="number" class="form-control" id="edad-min" name="edad_min" placeholder="0">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="edad-max">Edad Máxima (días)</label>
-                                    <input type="number" class="form-control" id="edad-max" name="edad_max" placeholder="365">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>&nbsp;</label>
-                                    <div>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search mr-2"></i>
-                                            Filtrar
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" id="limpiar-filtros">
-                                            <i class="fas fa-times mr-2"></i>
-                                            Limpiar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+    </div>
+            
 
             <!-- Resumen de Seguimientos -->
             <div class="row">
@@ -244,16 +164,6 @@
                         <i class="fas fa-table mr-2"></i>
                         Registros de Seguimiento Detallado
                     </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-success btn-sm" id="exportar-excel">
-                            <i class="fas fa-file-excel mr-2"></i>
-                            Exportar Excel
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm" id="exportar-pdf">
-                            <i class="fas fa-file-pdf mr-2"></i>
-                            Exportar PDF
-                        </button>
-                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -358,35 +268,16 @@
             </div>
             @endif
         </div>
-    </section>
 </div>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 $(document).ready(function() {
-    // Inicializar fecha fin como hoy
-    $('#fecha-fin').val(new Date().toISOString().split('T')[0]);
-    
-    // Cargar datos iniciales desde el servidor
-    cargarGalpones();
-    cargarLotes();
-    cargarDatosIniciales();
-    
     // Cargar datos iniciales desde el servidor
     cargarDatosIniciales();
     
-    // Event listeners
-    $('#filtro-seguimientos').on('submit', function(e) {
-        e.preventDefault();
-        cargarDatosSeguimientos();
-    });
-    
-    $('#limpiar-filtros').on('click', function() {
-        $('#filtro-seguimientos')[0].reset();
-        $('#fecha-fin').val(new Date().toISOString().split('T')[0]);
-        cargarDatosSeguimientos();
-    });
+    // Se removieron filtros y eventos asociados
     
     // Cambio de tipo de gráfica
     $('.btn-group .btn').on('click', function() {
@@ -413,86 +304,6 @@ $(document).ready(function() {
                 console.error('Error cargando datos iniciales');
             }
         });
-    }
-    
-    function cargarGalpones() {
-        // Cargar galpones desde el backend
-        $.ajax({
-            url: '{{ route("avicontrol.admin.information.seguimientos") }}',
-            method: 'GET',
-            data: { ajax: true, action: 'galpones' },
-            success: function(response) {
-                if (response.galpones) {
-                    response.galpones.forEach(galpon => {
-                        $('#galpon').append(`<option value="${galpon.id}">${galpon.name}</option>`);
-                    });
-                }
-            },
-            error: function() {
-                console.error('Error cargando galpones');
-            }
-        });
-    }
-    
-    function cargarLotes() {
-        // Cargar lotes desde el backend
-        $.ajax({
-            url: '{{ route("avicontrol.admin.information.seguimientos") }}',
-            method: 'GET',
-            data: { ajax: true, action: 'lotes' },
-            success: function(response) {
-                if (response.lotes) {
-                    response.lotes.forEach(lote => {
-                        $('#lote').append(`<option value="${lote.id}">${lote.batch_name}</option>`);
-                    });
-                }
-            },
-            error: function() {
-                console.error('Error cargando lotes');
-            }
-        });
-    }
-    
-    function cargarDatosSeguimientos() {
-        mostrarCargando();
-        
-        // Obtener parámetros del filtro
-        const filtros = {
-            galpon: $('#galpon').val(),
-            lote: $('#lote').val(),
-            fecha_inicio: $('#fecha-inicio').val(),
-            fecha_fin: $('#fecha-fin').val(),
-            edad_min: $('#edad-min').val(),
-            edad_max: $('#edad-max').val(),
-            ajax: true
-        };
-        
-        // Hacer petición AJAX para obtener datos filtrados
-        $.ajax({
-            url: '{{ route("avicontrol.admin.information.seguimientos.filtrar") }}',
-            method: 'POST',
-            data: filtros,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    mostrarDatos(response.datos);
-                    actualizarResumen(response.datos);
-                    generarGraficas(response.datos);
-                    actualizarAnalisis(response.datos);
-                } else {
-                    mostrarError(response.message || 'Error al cargar datos');
-                }
-            },
-            error: function() {
-                mostrarError('Error de conexión al servidor');
-            }
-        });
-    }
-    
-    function mostrarCargando() {
-        $('#tabla-seguimientos tbody').html('<tr><td colspan="9" class="text-center">Cargando datos...</td></tr>');
     }
     
     function mostrarDatos(datos) {
@@ -748,25 +559,28 @@ $(document).ready(function() {
 
 @push('styles')
 <style>
-/* Estilos comunes para el módulo de información AVICONTROL */
+/* Estilos para el módulo de información AVICONTROL */
 
-/* Estilos generales */
-.content-wrapper {
-    background-color: #f4f6f9;
-    min-height: 100vh;
-    padding: 20px;
-    width: calc(100% - 250px);
-    margin-left: 250px;
-    position: relative;
+/* Page Header */
+.page-header {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 25px;
 }
 
-/* Ajuste para el contenido principal */
-.container-fluid {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding-left: 20px;
-    padding-right: 20px;
-    position: relative;
+.page-title {
+    color: #495057;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.page-subtitle {
+    color: #6c757d;
+    margin: 10px 0 0 0;
+    font-size: 1rem;
 }
 
 /* Ajuste para las secciones */
@@ -1052,42 +866,22 @@ canvas {
     padding: 15px;
 }
 
-/* Responsive */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-    .content-wrapper {
-        padding: 15px;
-        margin-left: 0;
-        max-width: 100%;
-    }
-    
-    .small-box .inner {
-        padding: 20px;
-    }
-    
-    .card-body {
-        padding: 20px;
-    }
-    
-    .btn-sm {
-        margin-left: 5px;
-        margin-bottom: 8px;
-    }
-    
-    .col-md-3, .col-md-6, .col-md-2 {
-        margin-bottom: 20px;
-    }
-    
-    .table-responsive {
-        font-size: 0.875rem;
-    }
-    
     .btn-group {
-        width: 100%;
-        margin-bottom: 15px;
+        flex-direction: column;
     }
     
     .btn-group .btn {
-        flex: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-header {
+        padding: 15px;
+    }
+    
+    .page-title {
+        font-size: 1.25rem;
     }
 }
 

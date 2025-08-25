@@ -77,6 +77,9 @@ Route::middleware(['web', 'lang'])->group(function () {
                 Route::get('/produccion', [InformationController::class, 'produccion'])->name('produccion');
                 Route::get('/alimentos', [InformationController::class, 'alimentos'])->name('alimentos');
                 Route::get('/seguimientos', [InformationController::class, 'seguimientos'])->name('seguimientos');
+                Route::get('/costos-produccion', [InformationController::class, 'costosProduccion'])->name('costos_produccion');
+                Route::get('/costos-produccion/exportar-pdf', [InformationController::class, 'exportarCostosProduccionPdf'])->name('costos_produccion.pdf');
+                Route::get('/costos-produccion/{id}/exportar-pdf', [InformationController::class, 'exportarCostoProduccionPdf'])->name('costos_produccion.pdf_show');
                 Route::get('/{id}', [InformationController::class, 'show'])->name('show');
                 
                 // Ruta para detalle del galpón
@@ -89,6 +92,7 @@ Route::middleware(['web', 'lang'])->group(function () {
                 // Endpoints AJAX para datos filtrados
                 Route::post('/produccion/filtrar', [InformationController::class, 'filtrarProduccion'])->name('produccion.filtrar');
                 Route::post('/alimentos/filtrar', [InformationController::class, 'filtrarAlimentos'])->name('alimentos.filtrar');
+                Route::post('/alimentos/filtrar-consumo', [InformationController::class, 'filtrarConsumoAlimentos'])->name('alimentos.filtrar.consumo');
                 Route::post('/seguimientos/filtrar', [InformationController::class, 'filtrarSeguimientos'])->name('seguimientos.filtrar');
                 
                 // Exportaciones
@@ -96,7 +100,12 @@ Route::middleware(['web', 'lang'])->group(function () {
                 Route::get('/produccion/exportar-pdf', [InformationController::class, 'exportarProduccionPdf'])->name('produccion.pdf');
                 Route::get('/alimentos/exportar-excel', [InformationController::class, 'exportarAlimentosExcel'])->name('alimentos.excel');
                 Route::get('/alimentos/exportar-pdf', [InformationController::class, 'exportarAlimentosPdf'])->name('alimentos.pdf');
+                Route::get('/alimentos/{id}/exportar-pdf', [InformationController::class, 'exportarAlimentoIndividualPdf'])->name('alimentos.pdf_individual');
+                Route::post('/alimentos/eliminar', [InformationController::class, 'eliminarAlimento'])->name('alimentos.eliminar');
                 Route::get('/seguimientos/exportar-excel', [InformationController::class, 'exportarSeguimientosExcel'])->name('seguimientos.excel');
+                
+                // Actualización de informes
+                Route::post('/alimentos/actualizar-informes', [InformationController::class, 'actualizarInformesAlimentos'])->name('alimentos.actualizar');
                 Route::get('/seguimientos/exportar-pdf', [InformationController::class, 'exportarSeguimientosPdf'])->name('seguimientos.pdf');
             });
             

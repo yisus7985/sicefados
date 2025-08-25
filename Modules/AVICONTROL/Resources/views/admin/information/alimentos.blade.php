@@ -7,111 +7,75 @@
 @endpush
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Informes de Alimentos</h1>
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="page-title">
+                    <i class="fas fa-utensils text-primary me-3"></i>
+                    Informes de Alimentos
+                </h2>
+                <p class="text-muted mb-0">Sistema de control y análisis de alimentos para avicultura</p>
                 </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('avicontrol.admin.welcome') }}">Inicio</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('avicontrol.admin.information.index') }}">Información</a></li>
-                        <li class="breadcrumb-item active">Alimentos</li>
-                    </ol>
+                <div class="col-auto">
+                    <button type="button" id="btn-pdf-por-fecha" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalPdfRango">
+                        <i class="fas fa-file-pdf me-2"></i>PDF por fecha
+                    </button>
+                    <button type="button" id="btn-test-pdf" class="btn btn-outline-warning ms-2" title="Probar generación de PDF">
+                        <i class="fas fa-bug me-2"></i>Test PDF
+                    </button>
                 </div>
             </div>
-        </div>
-    </section>
+            </div>
+            <!-- (Se removieron botones globales no requeridos) -->
 
-    <section class="content">
-        <div class="container-fluid">
-            <!-- Filtros -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-filter mr-2"></i>
-                        Filtros de Búsqueda
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <form id="filtro-alimentos">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="galpon">Galpón</label>
-                                    <select class="form-control" id="galpon" name="galpon">
-                                        <option value="">Todos los galpones</option>
-                                        <!-- Se llenará dinámicamente -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="insumo">Tipo de Insumo</label>
-                                    <select class="form-control" id="insumo" name="insumo">
-                                        <option value="">Todos los insumos</option>
-                                        <option value="concentrado">Concentrado</option>
-                                        <option value="maiz">Maíz</option>
-                                        <option value="soya">Soya</option>
-                                        <option value="vitaminas">Vitaminas</option>
-                                        <option value="minerales">Minerales</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="fecha-inicio">Fecha Inicio</label>
-                                    <input type="date" class="form-control" id="fecha-inicio" name="fecha_inicio">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="fecha-fin">Fecha Fin</label>
-                                    <input type="date" class="form-control" id="fecha-fin" name="fecha_fin">
-                                </div>
-                            </div>
+            <!-- Modal: PDF por rango de fechas -->
+            <div class="modal fade" id="modalPdfRango" tabindex="-1" aria-labelledby="modalPdfRangoLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalPdfRangoLabel"><i class="fas fa-file-pdf me-2 text-danger"></i>Descargar PDF por fecha</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="row mt-3">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="costo-min">Costo Mínimo</label>
-                                    <input type="number" class="form-control" id="costo-min" name="costo_min" placeholder="0.00">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="costo-max">Costo Máximo</label>
-                                    <input type="number" class="form-control" id="costo-max" name="costo_max" placeholder="999999.99">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>&nbsp;</label>
-                                    <div>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search mr-2"></i>
-                                            Filtrar
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" id="limpiar-filtros">
-                                            <i class="fas fa-times mr-2"></i>
-                                            Limpiar
-                                        </button>
+                        <form id="formPdfRango">
+                            <div class="modal-body">
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="fecha_desde" class="form-label">Desde</label>
+                                        <input type="date" class="form-control" id="fecha_desde" name="desde" required>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="fecha_hasta" class="form-label">Hasta</label>
+                                        <input type="date" class="form-control" id="fecha_hasta" name="hasta" required>
                                     </div>
                                 </div>
+                                <small class="text-muted d-block mt-3">Se generará un único informe con los registros dentro del rango seleccionado.</small>
                             </div>
-                        </div>
-                    </form>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-download me-2"></i>Descargar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            <!-- Resumen de Costos -->
+            <!-- Resumen de Costos y Consumo -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Estadísticas en Tiempo Real:</strong> Las estadísticas se calculan automáticamente basándose en los datos filtrados y se actualizan en tiempo real.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                </div>
+            </div>
             <div class="row">
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="small-box bg-info">
                         <div class="inner">
-                            <h3>${{ number_format($estadisticasAlimentos['total_gasto'] ?? 0, 2) }}</h3>
+                            <h3 id="total-gasto">${{ number_format($estadisticasAlimentos['total_gasto'] ?? 0, 2) }}</h3>
                             <p>Total Gastado</p>
                         </div>
                         <div class="icon">
@@ -119,10 +83,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="small-box bg-success">
                         <div class="inner">
-                            <h3>${{ number_format($estadisticasAlimentos['promedio_galpon'] ?? 0, 2) }}</h3>
+                            <h3 id="promedio-galpon">${{ number_format($estadisticasAlimentos['promedio_galpon'] ?? 0, 2) }}</h3>
                             <p>Promedio por Galpón</p>
                         </div>
                         <div class="icon">
@@ -130,10 +94,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="small-box bg-warning">
                         <div class="inner">
-                            <h3>{{ number_format($estadisticasAlimentos['total_kilos'] ?? 0) }} kg</h3>
+                            <h3 id="total-kilos">{{ number_format($estadisticasAlimentos['total_kilos'] ?? 0) }} kg</h3>
                             <p>Total Kilogramos</p>
                         </div>
                         <div class="icon">
@@ -141,10 +105,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="small-box bg-danger">
                         <div class="inner">
-                            <h3>${{ number_format($estadisticasAlimentos['costo_ave'] ?? 0, 2) }}</h3>
+                            <h3 id="costo-ave">${{ number_format($estadisticasAlimentos['costo_ave'] ?? 0, 2) }}</h3>
                             <p>Costo por Ave</p>
                         </div>
                         <div class="icon">
@@ -152,16 +116,37 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-lg-2 col-6">
+                    <div class="small-box bg-primary">
+                        <div class="inner">
+                            <h3 id="total-consumo-kg">0 kg</h3>
+                            <p>Total Consumido</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <div class="small-box bg-secondary">
+                        <div class="inner">
+                            <h3 id="promedio-consumo-ave">0 g</h3>
+                            <p>Promedio/Ave</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Estadísticas Adicionales -->
-            @if(isset($estadisticasAlimentos['consumo_hoy']) || isset($estadisticasAlimentos['consumo_mes']))
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h5 class="text-warning">Consumo del Día</h5>
-                            <h3 class="text-warning">{{ number_format($estadisticasAlimentos['consumo_hoy'] ?? 0, 1) }} kg</h3>
+                            <h3 class="text-warning" id="consumo-hoy">{{ number_format($estadisticasAlimentos['consumo_hoy'] ?? 0, 1) }} kg</h3>
                             <small class="text-muted">Kg consumidos hoy</small>
                         </div>
                     </div>
@@ -170,31 +155,22 @@
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h5 class="text-info">Consumo del Mes</h5>
-                            <h3 class="text-info">{{ number_format($estadisticasAlimentos['consumo_mes'] ?? 0, 1) }} kg</h3>
+                            <h3 class="text-info" id="consumo-mes">{{ number_format($estadisticasAlimentos['consumo_mes'] ?? 0, 1) }} kg</h3>
                             <small class="text-muted">Kg consumidos este mes</small>
                         </div>
                     </div>
                 </div>
             </div>
-            @endif
+
+            
 
             <!-- Tabla de Alimentos -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-table mr-2"></i>
+                        <i class="fas fa-utensils mr-2"></i>
                         Registros de Alimentos por Galpón
                     </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-success btn-sm" id="exportar-excel">
-                            <i class="fas fa-file-excel mr-2"></i>
-                            Exportar Excel
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm" id="exportar-pdf">
-                            <i class="fas fa-file-pdf mr-2"></i>
-                            Exportar PDF
-                        </button>
-                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -209,12 +185,13 @@
                                     <th>Total</th>
                                     <th>Proveedor</th>
                                     <th>Observaciones</th>
+                                    <th>PDF</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @if(isset($datosAlimentos) && count($datosAlimentos) > 0)
                                     @foreach($datosAlimentos as $alimento)
-                                    <tr>
+                                    <tr data-id="{{ $alimento['id'] ?? 'null' }}">
                                         <td>{{ $alimento['fecha'] ? $alimento['fecha']->format('d/m/Y') : 'N/A' }}</td>
                                         <td>{{ $alimento['galpon'] }}</td>
                                         <td>{{ $alimento['insumo'] }}</td>
@@ -223,11 +200,16 @@
                                         <td>${{ number_format($alimento['total'], 2) }}</td>
                                         <td>{{ $alimento['proveedor'] }}</td>
                                         <td>{{ $alimento['observaciones'] }}</td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-danger btn-pdf" data-id="{{ $alimento['id'] ?? 'null' }}" title="Descargar PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                     @endforeach
-                                @else
+                                                                @else
                                     <tr>
-                                        <td colspan="8" class="text-center text-muted">
+                                        <td colspan="9" class="text-center text-muted">
                                             <i class="fas fa-info-circle me-2"></i>
                                             No hay datos de alimentos disponibles
                                         </td>
@@ -239,10 +221,11 @@
                 </div>
             </div>
 
+
             <!-- Gráficas de Análisis -->
             <div class="row">
                 <!-- Gráfica de Costos por Galpón -->
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">
@@ -257,7 +240,7 @@
                 </div>
 
                 <!-- Gráfica de Consumo por Insumo -->
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">
@@ -267,6 +250,21 @@
                         </div>
                         <div class="card-body">
                             <canvas id="grafica-consumo-insumo" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfica de Consumo por Galpón -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-doughnut mr-2"></i>
+                                Consumo por Galpón
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="grafica-consumo-galpon" style="height: 300px;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -317,179 +315,182 @@
             </div>
             @endif
         </div>
-    </section>
 </div>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 $(document).ready(function() {
-    // Inicializar fecha fin como hoy
-    $('#fecha-fin').val(new Date().toISOString().split('T')[0]);
+    console.log('=== AVICONTROL ALIMENTOS - INICIANDO ===');
     
-    // Cargar galpones
-    cargarGalpones();
+    // Inicializar la página
+    inicializarPagina();
     
-    // Cargar datos iniciales desde el servidor
-    cargarDatosIniciales();
+    // Event Listeners
+    configurarEventListeners();
     
-    // Cargar datos iniciales desde el servidor
-    cargarDatosIniciales();
-    
-    // Event listeners
-    $('#filtro-alimentos').on('submit', function(e) {
-        e.preventDefault();
-        cargarDatosAlimentos();
-    });
-    
-    $('#limpiar-filtros').on('click', function() {
-        $('#filtro-alimentos')[0].reset();
-        $('#fecha-fin').val(new Date().toISOString().split('T')[0]);
-        cargarDatosAlimentos();
-    });
-    
-    function cargarDatosIniciales() {
-        // Cargar datos iniciales desde el servidor
-        $.ajax({
-            url: '{{ route("avicontrol.admin.information.alimentos") }}',
-            method: 'GET',
-            data: { ajax: true, action: 'datos_iniciales' },
-            success: function(response) {
-                if (response.success) {
-                    mostrarDatos(response.datos);
-                    actualizarResumen(response.datos);
-                    generarGraficas(response.datos);
-                }
-            },
-            error: function() {
-                console.error('Error cargando datos iniciales');
-            }
-        });
-    }
-    
-    function cargarGalpones() {
-        // Cargar galpones desde el backend
-        $.ajax({
-            url: '{{ route("avicontrol.admin.information.alimentos") }}',
-            method: 'GET',
-            data: { ajax: true, action: 'galpones' },
-            success: function(response) {
-                if (response.galpones) {
-                    response.galpones.forEach(galpon => {
-                        $('#galpon').append(`<option value="${galpon.id}">${galpon.name}</option>`);
-                    });
-                }
-            },
-            error: function() {
-                console.error('Error cargando galpones');
-            }
-        });
-    }
-    
-    function cargarDatosAlimentos() {
-        mostrarCargando();
+    // Funciones principales
+    function inicializarPagina() {
+        // Cargar estadísticas iniciales
+        actualizarEstadisticasDesdeBackend();
         
-        // Obtener parámetros del filtro
-        const filtros = {
-            galpon: $('#galpon').val(),
-            insumo: $('#insumo').val(),
-            fecha_inicio: $('#fecha-inicio').val(),
-            fecha_fin: $('#fecha-fin').val(),
-            costo_min: $('#costo-min').val(),
-            costo_max: $('#costo-max').val(),
-            ajax: true
-        };
-        
-        // Hacer petición AJAX para obtener datos filtrados
-        $.ajax({
-            url: '{{ route("avicontrol.admin.information.alimentos.filtrar") }}',
-            method: 'POST',
-            data: filtros,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    mostrarDatos(response.datos);
-                    actualizarResumen(response.datos);
-                    generarGraficas(response.datos);
-                } else {
-                    mostrarError(response.message || 'Error al cargar datos');
-                }
-            },
-            error: function() {
-                mostrarError('Error de conexión al servidor');
+        // Generar gráficas si hay datos
+        setTimeout(() => {
+            const datos = obtenerDatosDeTabla();
+            if (datos && datos.length > 0) {
+                generarGraficas(datos);
             }
+        }, 1000);
+    }
+    
+    function configurarEventListeners() {
+        // Botón PDF individual por registro
+        $(document).on('click', '.btn-pdf', function(e) {
+            e.preventDefault();
+            const id = $(this).data('id');
+            console.log('Generando PDF para ID:', id);
+            
+            if (!id || id === 'null' || id === 'undefined') {
+                mostrarNotificacion('ID de registro no válido', 'error');
+                return;
+            }
+            
+            // Mostrar estado de carga
+            const $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            // Generar y descargar PDF
+            generarPDFIndividual(id, $btn);
+        });
+        
+        // Formulario PDF por rango de fechas
+        $('#formPdfRango').on('submit', function(e) {
+            e.preventDefault();
+            const desde = $('#fecha_desde').val();
+            const hasta = $('#fecha_hasta').val();
+            
+            if (!desde || !hasta) {
+                mostrarNotificacion('Seleccione ambas fechas', 'error');
+                return;
+            }
+            
+            if (new Date(desde) > new Date(hasta)) {
+                mostrarNotificacion('La fecha inicial no puede ser mayor que la final', 'error');
+                return;
+            }
+            
+            generarPDFPorRango(desde, hasta);
+        });
+        
+        // Botón de prueba (solo para desarrollo)
+        $('#btn-test-pdf').on('click', function() {
+            ejecutarTestPDF();
         });
     }
     
-    function mostrarCargando() {
-        $('#tabla-alimentos tbody').html('<tr><td colspan="8" class="text-center">Cargando datos...</td></tr>');
-    }
-    
-    function mostrarDatos(datos) {
-        if (!datos || datos.length === 0) {
-            $('#tabla-alimentos tbody').html(`
-                <tr>
-                    <td colspan="8" class="text-center text-muted">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay datos disponibles para los filtros seleccionados
-                    </td>
-                </tr>
-            `);
-            return;
+    function generarPDFIndividual(id, $btn) {
+        try {
+            // Mostrar estado de carga
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            // Construir URL para visualizar (sin download) y abrir en nueva pestaña
+            const url = `{{ route('avicontrol.admin.information.alimentos.pdf_individual', ['id' => ':id']) }}`.replace(':id', id);
+            console.log('Abriendo informe en nueva pestaña:', url);
+            
+            // Abrir en nueva pestaña/ventana para que el navegador renderice
+            window.open(url, '_blank');
+            
+        } catch (error) {
+            console.error('Error generando PDF:', error);
+            mostrarNotificacion('Error generando PDF', 'error');
+        } finally {
+            // Restaurar botón después de un pequeño delay
+            setTimeout(() => {
+                $btn.prop('disabled', false).html('<i class=\"fas fa-file-pdf\"></i>');
+            }, 1200);
         }
+    }
+    
+    function generarPDFPorRango(desde, hasta) {
+        try {
+            const url = `{{ route('avicontrol.admin.information.alimentos.pdf') }}?rango=1&desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}&download=1`;
+            console.log('Descargando PDF por rango desde:', url);
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalPdfRango'));
+            if (modal) modal.hide();
+            
+            // Descargar PDF
+            window.location.href = url;
+            
+        } catch (error) {
+            console.error('Error generando PDF por rango:', error);
+            mostrarNotificacion('Error generando PDF por rango', 'error');
+        }
+    }
+    
+    function ejecutarTestPDF() {
+        console.log('=== TEST PDF EJECUTADO ===');
         
-        let html = '';
-        datos.forEach(dato => {
-            html += `
-                <tr>
-                    <td>${formatearFecha(dato.fecha)}</td>
-                    <td>${dato.galpon}</td>
-                    <td>${dato.insumo}</td>
-                    <td>${dato.cantidad.toLocaleString()}</td>
-                    <td>$${dato.precio_unitario.toFixed(2)}</td>
-                    <td>$${dato.total.toFixed(2)}</td>
-                    <td>${dato.proveedor}</td>
-                    <td>${dato.observaciones}</td>
-                </tr>
-            `;
+        // Verificar rutas
+        console.log('Ruta PDF individual:', '{{ route("avicontrol.admin.information.alimentos.pdf_individual", ["id" => 1]) }}');
+        console.log('Ruta PDF rango:', '{{ route("avicontrol.admin.information.alimentos.pdf") }}');
+        
+        // Verificar tabla
+        const filas = $('#tabla-alimentos tbody tr');
+        console.log('Filas en tabla:', filas.length);
+        
+        filas.each(function(index) {
+            const id = $(this).data('id');
+            const botonPdf = $(this).find('.btn-pdf');
+            console.log(`Fila ${index + 1}: ID=${id}, Botón PDF existe=${botonPdf.length > 0}`);
         });
-        $('#tabla-alimentos tbody').html(html);
-    }
-    
-    function mostrarError(mensaje) {
-        $('#tabla-alimentos tbody').html(`
-            <tr>
-                <td colspan="8" class="text-center text-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    ${mensaje}
-                </td>
-            </tr>
-        `);
-    }
-    
-    function actualizarResumen(datos) {
-        const totalGasto = datos.reduce((sum, dato) => sum + dato.total, 0);
-        const totalKilos = datos.reduce((sum, dato) => sum + dato.cantidad, 0);
-        const galponesUnicos = [...new Set(datos.map(d => d.galpon))];
-        const promedioGalpon = totalGasto / galponesUnicos.length;
-        const costoAve = totalGasto / 9800; // Total de aves del sistema
         
-        $('#total-gasto').text('$' + totalGasto.toFixed(2));
-        $('#promedio-galpon').text('$' + promedioGalpon.toFixed(2));
-        $('#total-kilos').text(totalKilos.toLocaleString() + ' kg');
-        $('#costo-ave').text('$' + costoAve.toFixed(2));
+        mostrarNotificacion('Test completado - Revisa la consola', 'info');
+    }
+    
+    function actualizarEstadisticasDesdeBackend() {
+        // Las estadísticas ya vienen del backend en la vista
+        console.log('Estadísticas cargadas desde backend');
+    }
+    
+    function obtenerDatosDeTabla() {
+        const filas = $('#tabla-alimentos tbody tr');
+        if (filas.length === 0) return null;
+        
+        const datos = [];
+        filas.each(function() {
+            const celdas = $(this).find('td');
+            if (celdas.length >= 6) {
+                const dato = {
+                    id: $(this).data('id'),
+                    fecha: celdas.eq(0).text(),
+                    galpon: celdas.eq(1).text(),
+                    insumo: celdas.eq(2).text(),
+                    cantidad: parseFloat(celdas.eq(3).text().replace(/[^\d.-]/g, '')) || 0,
+                    precio_unitario: parseFloat(celdas.eq(4).text().replace(/[^\d.-]/g, '')) || 0,
+                    total: parseFloat(celdas.eq(5).text().replace(/[^\d.-]/g, '')) || 0,
+                    proveedor: celdas.eq(6).text(),
+                    observaciones: celdas.eq(7).text()
+                };
+                datos.push(dato);
+            }
+        });
+        
+        return datos;
     }
     
     function generarGraficas(datos) {
+        if (!datos || datos.length === 0) return;
+        
         generarGraficaCostosGalpon(datos);
         generarGraficaConsumoInsumo(datos);
         generarGraficaEvolucionCostos(datos);
     }
     
     function generarGraficaCostosGalpon(datos) {
-        const ctx = document.getElementById('grafica-costos-galpon').getContext('2d');
+        const ctx = document.getElementById('grafica-costos-galpon');
+        if (!ctx) return;
         
         if (window.graficaCostosGalpon) {
             window.graficaCostosGalpon.destroy();
@@ -507,34 +508,19 @@ $(document).ready(function() {
                 labels: galpones,
                 datasets: [{
                     data: costos,
-                    backgroundColor: [
-                        '#FF6384',
-                        '#36A2EB',
-                        '#FFCE56',
-                        '#4BC0C0'
-                    ]
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return context.label + ': $' + context.parsed.toFixed(2) + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
+                maintainAspectRatio: false
             }
         });
     }
     
     function generarGraficaConsumoInsumo(datos) {
-        const ctx = document.getElementById('grafica-consumo-insumo').getContext('2d');
+        const ctx = document.getElementById('grafica-consumo-insumo');
+        if (!ctx) return;
         
         if (window.graficaConsumoInsumo) {
             window.graficaConsumoInsumo.destroy();
@@ -561,17 +547,14 @@ $(document).ready(function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
     
     function generarGraficaEvolucionCostos(datos) {
-        const ctx = document.getElementById('grafica-evolucion-costos').getContext('2d');
+        const ctx = document.getElementById('grafica-evolucion-costos');
+        if (!ctx) return;
         
         if (window.graficaEvolucionCostos) {
             window.graficaEvolucionCostos.destroy();
@@ -586,7 +569,7 @@ $(document).ready(function() {
         window.graficaEvolucionCostos = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: fechas.map(f => formatearFecha(f)),
+                labels: fechas,
                 datasets: [{
                     label: 'Costos Diarios',
                     data: costos,
@@ -598,109 +581,52 @@ $(document).ready(function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value.toFixed(2);
-                            }
-                        }
-                    }
-                }
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
     
-    function formatearFecha(fecha) {
-        return new Date(fecha).toLocaleDateString('es-ES');
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        const notificacion = $(`
+            <div class="alert alert-${tipo} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        $('body').append(notificacion);
+        
+        setTimeout(() => {
+            notificacion.fadeOut(() => notificacion.remove());
+        }, 5000);
     }
+    
+    console.log('=== AVICONTROL ALIMENTOS - INICIALIZADO ===');
 });
 </script>
 @endpush
 
 @push('styles')
 <style>
-/* Estilos comunes para el módulo de información AVICONTROL */
+/* Estilos optimizados para AVICONTROL Alimentos */
 
-/* Estilos generales */
-.content-wrapper {
-    background-color: #f4f6f9;
-    min-height: 100vh;
-    padding: 20px;
-    width: calc(100% - 250px);
-    margin-left: 250px;
-    position: relative;
+/* Page Header */
+.page-header {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
 }
 
-/* Ajuste para el contenido principal */
-.container-fluid {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding-left: 20px;
-    padding-right: 20px;
-    position: relative;
-}
-
-/* Ajuste para las secciones */
-section.content {
-    margin-left: 0;
-    margin-right: 0;
-    position: relative;
-}
-
-/* Contenedor más ancho para aprovechar el espacio */
-.content-wrapper > * {
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-/* Elementos específicos más anchos */
-.content-wrapper .row {
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-.content-wrapper .card {
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-.content-wrapper .table-responsive {
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-/* Ajuste específico para el contenido principal */
-.content-wrapper section.content {
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-}
-
-/* Ajuste específico para el sidebar */
-.sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 250px;
-    height: 100vh;
-    z-index: 1000;
-}
-
-/* Ajuste del contenido principal */
-.main-content {
-    margin-left: 250px;
-    width: calc(100% - 250px);
-    min-height: 100vh;
-    background-color: #f4f6f9;
-    padding: 20px;
+.page-title {
+    color: #495057;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
 /* Cards de estadísticas */
@@ -713,8 +639,8 @@ section.content {
 }
 
 .small-box:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
 
 .small-box .inner {
@@ -758,7 +684,6 @@ section.content {
 
 .table tbody tr:hover {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    transform: scale(1.01);
     transition: all 0.2s ease;
 }
 
@@ -805,21 +730,6 @@ section.content {
     overflow: hidden;
 }
 
-.btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
-}
-
-.btn:hover::before {
-    left: 100%;
-}
-
 .btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.15);
@@ -831,32 +741,28 @@ section.content {
     font-size: 0.875rem;
 }
 
-/* Filtros */
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.form-control {
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
-    padding: 12px 16px;
+/* Botón de prueba */
+#btn-test-pdf {
     transition: all 0.3s ease;
-    font-size: 0.9rem;
+    border: 2px dashed #ffc107;
 }
 
-.form-control:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15);
-    transform: translateY(-1px);
+#btn-test-pdf:hover {
+    background: #ffc107;
+    color: #000;
+    transform: scale(1.05);
+    border-style: solid;
+}
+
+/* Botones de acciones en tabla */
+.btn-pdf {
+    margin: 0 2px;
+    transition: all 0.3s ease;
+}
+
+.btn-pdf:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
 }
 
 /* Gráficas */
@@ -877,193 +783,107 @@ canvas {
     padding: 20px;
 }
 
+/* Notificaciones */
+.alert {
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border: none;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-    .content-wrapper {
+    .page-header {
         padding: 15px;
-        margin-left: 0;
-        max-width: 100%;
-    }
-    
-    .small-box .inner {
-        padding: 20px;
-    }
-    
-    .card-body {
-        padding: 20px;
-    }
-    
-    .btn-sm {
-        margin-left: 5px;
-        margin-bottom: 8px;
-    }
-    
-    .col-md-3, .col-md-6, .col-md-2 {
         margin-bottom: 20px;
     }
     
-    .table-responsive {
-        font-size: 0.875rem;
+    .page-title {
+        font-size: 1.25rem;
+        text-align: center;
+    }
+    
+    .card-body {
+        padding: 15px;
+    }
+    
+    .small-box .inner {
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .table th,
+    .table td {
+        padding: 8px 6px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        margin-left: 3px;
+        margin-bottom: 5px;
+    }
+    
+    canvas {
+        height: 250px !important;
     }
 }
 
-/* Ajustes adicionales para centrado */
-.row {
-    margin-left: 0;
-    margin-right: 0;
-}
-
-.col-md-3, .col-md-6, .col-md-4, .col-md-8, .col-md-12 {
-    padding-left: 15px;
-    padding-right: 15px;
-}
-
-/* Centrado de cards */
-.card {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Ajuste de breadcrumbs */
-.breadcrumb {
-    margin-left: 0;
-    margin-right: 0;
-}
-
-/* Estados de carga */
-.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-/* Mensajes de estado */
-.status-message {
-    padding: 30px;
-    text-align: center;
-    color: #6c757d;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-}
-
-.status-message i {
-    font-size: 3rem;
-    margin-bottom: 15px;
-    opacity: 0.6;
-    color: #007bff;
-}
-
-/* Animaciones */
-@keyframes fadeIn {
-    from { 
-        opacity: 0; 
-        transform: translateY(30px); 
+@media (max-width: 576px) {
+    .page-header {
+        padding: 12px;
     }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
+    
+    .page-title {
+        font-size: 1.1rem;
     }
-}
-
-@keyframes slideIn {
-    from { 
-        opacity: 0; 
-        transform: translateX(-30px); 
+    
+    .card-header {
+        padding: 12px 15px;
     }
-    to { 
-        opacity: 1; 
-        transform: translateX(0); 
+    
+    .card-body {
+        padding: 12px;
     }
-}
-
-.card {
-    animation: fadeIn 0.6s ease-out;
-}
-
-.small-box {
-    animation: slideIn 0.6s ease-out;
-}
-
-/* Hover effects */
-.card:hover {
-    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-/* Breadcrumbs */
-.breadcrumb {
-    background-color: transparent;
-    padding: 0;
-    margin-bottom: 25px;
-    font-size: 0.9rem;
-}
-
-.breadcrumb-item + .breadcrumb-item::before {
-    content: "›";
-    color: #6c757d;
-    font-weight: bold;
-}
-
-.breadcrumb-item a {
-    color: #007bff;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.breadcrumb-item a:hover {
-    color: #0056b3;
-}
-
-/* Page header */
-.page-header {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-    margin-bottom: 25px;
-}
-
-.page-title {
-    color: #495057;
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.page-subtitle {
-    color: #6c757d;
-    margin: 10px 0 0 0;
-    font-size: 1rem;
-}
-
-/* Estados especiales */
-.text-success {
-    color: #28a745 !important;
-}
-
-.text-warning {
-    color: #ffc107 !important;
-}
-
-.text-info {
-    color: #17a2b8 !important;
-}
-
-.text-danger {
-    color: #dc3545 !important;
-}
-
-/* Sombras personalizadas */
-.shadow-sm {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-}
-
-.shadow {
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07) !important;
-}
-
-.shadow-lg {
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1) !important;
+    
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .btn-sm {
+        padding: 5px 8px;
+        font-size: 0.7rem;
+    }
+    
+    canvas {
+        height: 200px !important;
+    }
 }
 </style>
 @endpush

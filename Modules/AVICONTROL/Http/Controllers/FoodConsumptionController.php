@@ -32,6 +32,9 @@ class FoodConsumptionController extends Controller
             $query->where('producto_id', $request->producto_id);
         }
 
+        // Solo mostrar registros activos (no eliminados)
+        $query->where('estado', '!=', FoodConsumption::STATUS_CANCELLED);
+
         $consumos = $query->orderBy('fecha_registro', 'desc')->paginate(15);
         $galpones = PoultryFacility::all();
         $productos = InventoryProduct::where('category', 'alimentos')->active()->get();
@@ -219,20 +222,27 @@ class FoodConsumptionController extends Controller
         
         DB::beginTransaction();
         try {
-            // Revertir inventario
-            $consumo->revertirInventario();
+            // Revertir inventario si está activo
+            if ($consumo->estado === FoodConsumption::STATUS_ACTIVE) {
+                $consumo->revertirInventario();
+            }
             
-            // Cambiar estado a cancelado en lugar de eliminar
-            $consumo->update(['estado' => FoodConsumption::STATUS_CANCELLED]);
+            // Eliminar completamente el registro usando soft delete
+            $consumo->delete();
             
             DB::commit();
 
-            return redirect()->route('avicontrol.admin.food_consumption.index')
-                ->with('success', 'Consumo de alimento cancelado exitosamente.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Registro eliminado exitosamente'
+            ]);
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Error al cancelar el consumo: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar el registro: ' . $e->getMessage()
+            ], 500);
         }
     }
 

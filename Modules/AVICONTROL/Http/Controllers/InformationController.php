@@ -38,6 +38,126 @@ class InformationController extends Controller
     }
 
     /**
+     * Exporta a PDF un costo de producción específico por ID
+     */
+    public function exportarCostoProduccionPdf($id)
+    {
+        try {
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                return redirect()->back()->with('error', 'La tabla de costos de producción no existe.');
+            }
+
+            $cost = \DB::table('avicontrol_production_costs')
+                ->leftJoin('avicontrol_poultry_facilities', 'avicontrol_production_costs.poultry_facility_id', '=', 'avicontrol_poultry_facilities.id')
+                ->select([
+                    'avicontrol_production_costs.*',
+                    'avicontrol_poultry_facilities.name as facility_name'
+                ])
+                ->where('avicontrol_production_costs.id', $id)
+                ->first();
+
+            if (!$cost) {
+                return redirect()->route('avicontrol.admin.information.costos_produccion')
+                    ->with('error', 'El registro solicitado no existe.');
+            }
+
+            $generatedAt = now();
+
+            // Forzar HTML si se solicita explícitamente: ?format=html
+            if (request()->query('format') === 'html') {
+                return view('avicontrol::admin.information.pdf.costo-produccion', compact('cost', 'generatedAt'));
+            }
+
+            // Si DomPDF no está disponible, retornar HTML imprimible
+            if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                return view('avicontrol::admin.information.pdf.costo-produccion', compact('cost', 'generatedAt'));
+            }
+
+            // Generar PDF con opciones seguras
+            try {
+                \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+                    'isRemoteEnabled' => false,
+                    'isHtml5ParserEnabled' => true,
+                    'defaultFont' => 'DejaVu Sans',
+                    'dpi' => 96,
+                ]);
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('avicontrol::admin.information.pdf.costo-produccion', compact('cost', 'generatedAt'));
+                $pdf->setPaper('a4', 'portrait');
+
+                $filename = 'costo_produccion_' . $cost->id . '_' . $generatedAt->format('Y-m-d_H-i-s') . '.pdf';
+                return $pdf->download($filename);
+            } catch (\Throwable $e) {
+                \Log::error('Fallo generando PDF individual (costo): ' . $e->getMessage());
+                // Fallback a HTML para no dejar colgada la página
+                return view('avicontrol::admin.information.pdf.costo-produccion', compact('cost', 'generatedAt'));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error exportando PDF de costo de producción: ' . $e->getMessage());
+            return redirect()->route('avicontrol.admin.information.costos_produccion')
+                ->with('error', 'No se pudo generar el PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exporta a PDF el listado completo de costos de producción
+     */
+    public function exportarCostosProduccionPdf(Request $request)
+    {
+        try {
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                return redirect()->back()->with('error', 'La tabla de costos de producción no existe.');
+            }
+
+            // Obtener TODOS los costos con nombre del galpón
+            $productionCosts = \DB::table('avicontrol_production_costs')
+                ->leftJoin('avicontrol_poultry_facilities', 'avicontrol_production_costs.poultry_facility_id', '=', 'avicontrol_poultry_facilities.id')
+                ->select([
+                    'avicontrol_production_costs.*',
+                    'avicontrol_poultry_facilities.name as facility_name'
+                ])
+                ->orderBy('avicontrol_production_costs.created_at', 'desc')
+                ->get();
+
+            $generatedAt = now();
+
+            // Forzar HTML si se solicita: ?format=html
+            if ($request->query('format') === 'html') {
+                return view('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
+            }
+
+            // Si DomPDF no está disponible, retornar HTML imprimible
+            if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                return view('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
+            }
+
+            // Generar PDF con opciones seguras
+            try {
+                \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+                    'isRemoteEnabled' => false,
+                    'isHtml5ParserEnabled' => true,
+                    'defaultFont' => 'DejaVu Sans',
+                    'dpi' => 96,
+                ]);
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
+                $pdf->setPaper('a4', 'landscape');
+
+                $filename = 'costos_produccion_' . $generatedAt->format('Y-m-d_H-i-s') . '.pdf';
+                return $pdf->download($filename);
+            } catch (\Throwable $e) {
+                \Log::error('Fallo generando PDF listado de costos: ' . $e->getMessage());
+                // Fallback a HTML para no colgar la petición
+                return view('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error exportando PDF de costos de producción: ' . $e->getMessage());
+            return redirect()->route('avicontrol.admin.information.costos_produccion')
+                ->with('error', 'No se pudo generar el PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Obtiene estadísticas generales del sistema
      */
     private function obtenerEstadisticasGenerales()
@@ -597,6 +717,7 @@ class InformationController extends Controller
                 ->get()
                 ->map(function($consumo) {
                     return [
+                        'id' => $consumo->id, // Agregar el ID del registro
                         'fecha' => $consumo->fecha_registro,
                         'galpon' => $consumo->galpon ? $consumo->galpon->name : 'N/A',
                         'insumo' => $consumo->producto ? $consumo->producto->name : 'N/A',
@@ -684,7 +805,7 @@ class InformationController extends Controller
     private function calcularTotalGastoAlimentos()
     {
         try {
-            $consumos = FoodConsumption::all();
+            $consumos = FoodConsumption::where('estado', '!=', 'cancelled')->get();
             return $consumos->sum(function($consumo) {
                 return $this->calcularCostoTotal($consumo);
             });
@@ -729,7 +850,8 @@ class InformationController extends Controller
     private function obtenerCostosPorGalpon()
     {
         try {
-            return FoodConsumption::select('galpon_id')
+            return FoodConsumption::where('estado', '!=', 'cancelled')
+                ->select('galpon_id')
                 ->selectRaw('SUM(cantidad_kg) as total_kg')
                 ->groupBy('galpon_id')
                 ->get()
@@ -752,7 +874,9 @@ class InformationController extends Controller
     private function calcularCostoTotalPorGalpon($galponId)
     {
         try {
-            $consumos = FoodConsumption::where('galpon_id', $galponId)->get();
+            $consumos = FoodConsumption::where('galpon_id', $galponId)
+                ->where('estado', '!=', 'cancelled')
+                ->get();
             return $consumos->sum(function($consumo) {
                 return $this->calcularCostoTotal($consumo);
             });
@@ -767,7 +891,8 @@ class InformationController extends Controller
     private function obtenerConsumoPorInsumo()
     {
         try {
-            return FoodConsumption::select('producto_id')
+            return FoodConsumption::where('estado', '!=', 'cancelled')
+                ->select('producto_id')
                 ->selectRaw('SUM(cantidad_kg) as total_kg')
                 ->groupBy('producto_id')
                 ->get()
@@ -801,7 +926,9 @@ class InformationController extends Controller
                 ->get()
                 ->map(function($item) {
                     $galpon = PoultryFacility::find($item->galpon_id);
-                    $consumoTotal = FoodConsumption::where('galpon_id', $item->galpon_id)->sum('cantidad_kg') ?? 0;
+                    $consumoTotal = FoodConsumption::where('galpon_id', $item->galpon_id)
+                        ->where('estado', '!=', 'cancelled')
+                        ->sum('cantidad_kg') ?? 0;
                     $porcentajeDesperdicio = $consumoTotal > 0 ? ($item->total_desperdicio / $consumoTotal) * 100 : 0;
                     
                     return [
@@ -1128,22 +1255,6 @@ class InformationController extends Controller
     }
 
     /**
-     * Filtra datos de producción
-     */
-    public function filtrarProduccion(Request $request)
-    {
-        try {
-            // Aquí implementarías la lógica de filtrado real
-            // Por ahora retornamos datos de ejemplo
-            $datos = [
-                'success' => true,
-                'data' => [],
-                'message' => 'Filtrado aplicado correctamente'
-            ];
-            
-            return response()->json($datos);
-        } catch (\Exception $e) {
-            return response()->json([
                 'success' => false,
                 'message' => 'Error al filtrar: ' . $e->getMessage()
             ], 500);
@@ -1173,23 +1284,105 @@ class InformationController extends Controller
     }
 
     /**
+     * Filtra datos de consumo de alimentos
+     */
+    public function filtrarConsumoAlimentos(Request $request)
+    {
+        try {
+            $fechaInicio = $request->input('fecha_inicio');
+            $fechaFin = $request->input('fecha_fin');
+            $galponId = $request->input('galpon_id');
+
+            $query = FoodConsumption::query()->with(['galpon', 'producto']);
+
+            if ($fechaInicio && $fechaFin) {
+                $query->whereBetween('fecha_registro', [$fechaInicio, $fechaFin]);
+            }
+
+            if ($galponId) {
+                $query->where('galpon_id', $galponId);
+            }
+
+            $consumo = $query->orderBy('fecha_registro', 'desc')->get()->map(function($consumo) {
+                return [
+                    'fecha' => $consumo->fecha_registro,
+                    'galpon' => $consumo->galpon ? $consumo->galpon->name : 'N/A',
+                    'insumo' => $consumo->producto ? $consumo->producto->name : 'N/A',
+                    'cantidad' => $consumo->cantidad_kg ?? 0,
+                    'precio_unitario' => $this->obtenerPrecioInsumo($consumo->producto_id),
+                    'total' => $this->calcularCostoTotal($consumo),
+                    'observaciones' => $consumo->observaciones ?? 'Sin observaciones'
+                ];
+            });
+
+            return response()->json(['success' => true, 'data' => $consumo]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al filtrar datos de consumo: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Filtra datos de seguimientos
      */
     public function filtrarSeguimientos(Request $request)
     {
         try {
-            // Aquí implementarías la lógica de filtrado real
-            $datos = [
-                'success' => true,
-                'data' => [],
-                'message' => 'Filtrado aplicado correctamente'
-            ];
-            
-            return response()->json($datos);
+            $query = \Modules\AVICONTROL\Entities\Bird::query()->with('poultryFacility');
+
+            // Aplicar filtros
+            if ($request->filled('galpon')) {
+                $query->where('poultry_facility_id', $request->input('galpon'));
+            }
+
+            if ($request->filled('lote')) {
+                $query->where('id', $request->input('lote')); // Asumiendo que el valor del lote es el ID del ave/lote
+            }
+
+            if ($request->filled('fecha_inicio')) {
+                $query->whereDate('entry_date', '>=', $request->input('fecha_inicio'));
+            }
+
+            if ($request->filled('fecha_fin')) {
+                $query->whereDate('entry_date', '<=', $request->input('fecha_fin'));
+            }
+
+            $aves = $query->where('status', 'active')->get();
+
+            $datosFiltrados = $aves->map(function ($ave) {
+                // Calcular la edad
+                $edad = 0;
+                if ($ave->entry_date) {
+                    $edad = \Carbon\Carbon::parse($ave->entry_date)->diffInDays(\Carbon\Carbon::now());
+                }
+
+                return [
+                    'fecha' => \Carbon\Carbon::parse($ave->entry_date)->format('Y-m-d'),
+                    'galpon' => $ave->poultryFacility->name ?? 'N/A',
+                    'lote' => $ave->batch_name,
+                    'edad' => $edad,
+                    'peso_promedio' => $ave->average_weight ?? 0,
+                    'peso_minimo' => 0, // Dato de ejemplo
+                    'peso_maximo' => 0, // Dato de ejemplo
+                    'desviacion' => 0, // Dato de ejemplo
+                    'observaciones' => '' // Dato de ejemplo
+                ];
+            });
+
+            // Filtrado por edad (post-consulta)
+            if ($request->filled('edad_min')) {
+                $datosFiltrados = $datosFiltrados->where('edad', '>=', $request->input('edad_min'));
+            }
+
+            if ($request->filled('edad_max')) {
+                $datosFiltrados = $datosFiltrados->where('edad', '<=', $request->input('edad_max'));
+            }
+
+            return response()->json(['success' => true, 'datos' => $datosFiltrados->values()]);
         } catch (\Exception $e) {
+            \Log::error('Error al filtrar seguimientos: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al filtrar: ' . $e->getMessage()
+                'message' => 'Error al filtrar los datos: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1234,15 +1427,854 @@ class InformationController extends Controller
     }
 
     /**
-     * Exporta informes de alimentos a PDF
+     * Exporta a PDF un alimento específico por ID
      */
-    public function exportarAlimentosPdf(Request $request)
+    public function exportarAlimentoIndividualPdf($id)
     {
         try {
-            // Implementar exportación a PDF
-            return response()->json(['success' => true, 'message' => 'Exportación iniciada']);
+            // Buscar el alimento en la base de datos
+            $alimento = \DB::table('avicontrol_food_consumption')
+                ->leftJoin('avicontrol_poultry_facilities', 'avicontrol_food_consumption.poultry_facility_id', '=', 'avicontrol_poultry_facilities.id')
+                ->leftJoin('avicontrol_inventory_products', 'avicontrol_food_consumption.product_id', '=', 'avicontrol_inventory_products.id')
+                ->select([
+                    'avicontrol_food_consumption.*',
+                    'avicontrol_poultry_facilities.name as galpon_name',
+                    'avicontrol_inventory_products.name as producto_name'
+                ])
+                ->where('avicontrol_food_consumption.id', $id)
+                ->first();
+
+            if (!$alimento) {
+                return redirect()->back()->with('error', 'Alimento no encontrado');
+            }
+
+            $generatedAt = now();
+
+            // Si se solicita descarga, generar PDF
+            if (request()->query('download') === '1') {
+                // Verificar si DomPDF está disponible
+                if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                    try {
+                        // Configuración ultra-robusta de DomPDF
+                        \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+                            'isRemoteEnabled' => false,
+                            'isHtml5ParserEnabled' => true,
+                            'defaultFont' => 'DejaVu Sans',
+                            'dpi' => 96,
+                            'defaultPaperSize' => 'a4',
+                            'tempDir' => storage_path('app/temp'),
+                            'chroot' => storage_path('app'),
+                            'isFontSubsettingEnabled' => false,
+                            'isPhpEnabled' => false,
+                            'debugKeepTemp' => false,
+                            'debugCss' => false,
+                            'debugLayout' => false,
+                            'defaultMediaType' => 'print',
+                            'fontHeightRatio' => 0.9,
+                            'isJavascriptEnabled' => false,
+                            'isCssFloatEnabled' => true,
+                            'isCssPositionEnabled' => true,
+                            'isCssMarginEnabled' => true,
+                            'isCssPaddingEnabled' => true,
+                            'isCssBorderEnabled' => true,
+                            'isCssBackgroundEnabled' => true,
+                            'isCssTextEnabled' => true,
+                            'isCssFontEnabled' => true,
+                            'isCssListEnabled' => true,
+                            'isCssTableEnabled' => true,
+                            'isCssTransformEnabled' => false,
+                            'isCssAnimationEnabled' => false,
+                            'isCssTransitionEnabled' => false,
+                            'isCssFlexboxEnabled' => false,
+                            'isCssGridEnabled' => false,
+                        ]);
+
+                        // Generar PDF desde la vista Blade con manejo de errores
+                        $html = view('avicontrol::admin.information.pdf.alimento', compact('alimento', 'generatedAt'))->render();
+                        
+                        // Verificar que el HTML se generó correctamente
+                        if (empty($html) || strlen($html) < 100) {
+                            throw new \Exception('Error generando HTML: contenido vacío o muy corto');
+                        }
+                        
+                        // Crear PDF con HTML validado
+                        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+                        $pdf->setPaper('a4', 'portrait');
+                        
+                        // Generar nombre de archivo
+                        $filename = 'alimento_' . $alimento->id . '_' . $generatedAt->format('Y-m-d_H-i-s') . '.pdf';
+                        
+                        // Verificar que el PDF se generó correctamente
+                        $pdfContent = $pdf->output();
+                        if (empty($pdfContent) || strlen($pdfContent) < 100) {
+                            throw new \Exception('Error generando PDF: contenido vacío o muy corto');
+                        }
+                        
+                        // Descargar PDF con headers correctos
+                        return response($pdfContent)
+                            ->header('Content-Type', 'application/pdf')
+                            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                            ->header('Content-Length', strlen($pdfContent));
+                        
+                    } catch (\Throwable $e) {
+                        \Log::error('Error generando PDF con DomPDF: ' . $e->getMessage());
+                        \Log::error('Stack trace: ' . $e->getTraceAsString());
+                        
+                        // Fallback: generar HTML descargable
+                        return $this->generarHtmlDescargable($alimento, $generatedAt);
+                    }
+                } else {
+                    // Si DomPDF no está disponible, generar HTML
+                    return $this->generarHtmlDescargable($alimento, $generatedAt);
+                }
+            }
+
+            // Retornar vista HTML imprimible (fallback)
+            return view('avicontrol::admin.information.pdf.alimento', compact('alimento', 'generatedAt'));
+            
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Log::error('Error general en exportarAlimentoIndividualPdf: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'No se pudo generar el informe: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Genera HTML optimizado específicamente para PDF
+     */
+    private function generarHtmlParaPdf($alimento, $generatedAt)
+    {
+        $estado = $alimento->estado ?? 'active';
+        $estadoTexto = $estado === 'active' ? 'Activo' : ($estado === 'cancelled' ? 'Cancelado' : 'Pendiente');
+        
+        return '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Informe Alimento ' . $alimento->id . '</title>
+            <style>
+                @page {
+                    margin: 2cm;
+                    size: A4 portrait;
+                }
+                
+                body {
+                    font-family: DejaVu Sans, Arial, sans-serif;
+                    font-size: 10pt;
+                    line-height: 1.4;
+                    color: #000;
+                    margin: 0;
+                    padding: 0;
+                    background-color: white;
+                }
+                
+                .header {
+                    text-align: center;
+                    border-bottom: 2pt solid #007bff;
+                    padding-bottom: 15pt;
+                    margin-bottom: 20pt;
+                }
+                
+                .header h1 {
+                    color: #007bff;
+                    margin: 0;
+                    font-size: 18pt;
+                    font-weight: bold;
+                }
+                
+                .header .subtitle {
+                    color: #666;
+                    font-size: 12pt;
+                    margin-top: 5pt;
+                }
+                
+                .info-section {
+                    margin-bottom: 20pt;
+                    page-break-inside: avoid;
+                }
+                
+                .info-section h2 {
+                    color: #007bff;
+                    font-size: 14pt;
+                    border-bottom: 1pt solid #ddd;
+                    padding-bottom: 5pt;
+                    margin-bottom: 10pt;
+                }
+                
+                .info-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 15pt;
+                }
+                
+                .info-table th,
+                .info-table td {
+                    border: 1pt solid #ddd;
+                    padding: 8pt;
+                    text-align: left;
+                    font-size: 9pt;
+                }
+                
+                .info-table th {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                    width: 35%;
+                }
+                
+                .info-table td {
+                    width: 65%;
+                }
+                
+                .footer {
+                    margin-top: 30pt;
+                    text-align: center;
+                    font-size: 8pt;
+                    color: #666;
+                    border-top: 1pt solid #ddd;
+                    padding-top: 15pt;
+                }
+                
+                .status-badge {
+                    display: inline-block;
+                    padding: 4pt 8pt;
+                    border-radius: 4pt;
+                    font-size: 8pt;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }
+                
+                .status-active {
+                    background-color: #28a745;
+                    color: white;
+                }
+                
+                .status-cancelled {
+                    background-color: #dc3545;
+                    color: white;
+                }
+                
+                .status-pending {
+                    background-color: #ffc107;
+                    color: #000;
+                }
+                
+                .summary-box {
+                    background-color: #e9ecef;
+                    border: 1pt solid #dee2e6;
+                    border-radius: 6pt;
+                    padding: 12pt;
+                    margin: 15pt 0;
+                }
+                
+                .summary-box h3 {
+                    margin-top: 0;
+                    color: #495057;
+                    font-size: 12pt;
+                }
+                
+                .summary-grid {
+                    display: table;
+                    width: 100%;
+                    margin-top: 10pt;
+                }
+                
+                .summary-row {
+                    display: table-row;
+                }
+                
+                .summary-item {
+                    display: table-cell;
+                    text-align: center;
+                    padding: 8pt;
+                    background-color: white;
+                    border: 1pt solid #dee2e6;
+                    width: 33.33%;
+                }
+                
+                .summary-item .value {
+                    font-size: 14pt;
+                    font-weight: bold;
+                    color: #007bff;
+                }
+                
+                .summary-item .label {
+                    font-size: 8pt;
+                    color: #666;
+                    margin-top: 3pt;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>INFORME DE ALIMENTO - AVICONTROL</h1>
+                <div class="subtitle">Sistema de Control Avícola</div>
+            </div>
+
+            <div class="info-section">
+                <h2>Información del Registro</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>ID del Registro:</th>
+                        <td><strong>' . $alimento->id . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Fecha de Registro:</th>
+                        <td>' . ($alimento->fecha_registro ? \Carbon\Carbon::parse($alimento->fecha_registro)->format('d/m/Y H:i:s') : 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td>
+                            <span class="status-badge status-' . $estado . '">
+                                ' . $estadoTexto . '
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h2>Información del Galpón</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>Nombre del Galpón:</th>
+                        <td>' . ($alimento->galpon_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>ID del Galpón:</th>
+                        <td>' . ($alimento->poultry_facility_id ?? 'N/A') . '</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h2>Información del Producto</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>Nombre del Producto:</th>
+                        <td>' . ($alimento->producto_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>ID del Producto:</th>
+                        <td>' . ($alimento->product_id ?? 'N/A') . '</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h2>Detalles del Consumo</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>Cantidad (kg):</th>
+                        <td>' . number_format($alimento->cantidad_kg ?? 0, 2) . ' kg</td>
+                    </tr>
+                    <tr>
+                        <th>Cantidad de Bultos:</th>
+                        <td>' . ($alimento->cantidad_bultos ?? 0) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Peso por Bulto:</th>
+                        <td>' . number_format($alimento->peso_por_bulto ?? 0, 2) . ' kg</td>
+                    </tr>
+                    <tr>
+                        <th>Número de Aves:</th>
+                        <td>' . number_format($alimento->numero_aves ?? 0) . '</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="summary-box">
+                <h3>Resumen del Consumo</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="value">' . number_format(($alimento->cantidad_kg ?? 0) + (($alimento->cantidad_bultos ?? 0) * ($alimento->peso_por_bulto ?? 0)), 2) . '</div>
+                        <div class="label">Total Consumido (kg)</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value">' . number_format(($alimento->cantidad_kg ?? 0) / max(($alimento->numero_aves ?? 1), 1) * 1000, 2) . '</div>
+                        <div class="label">Consumo por Ave (g)</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value">' . ($alimento->numero_aves ?? 0) . '</div>
+                        <div class="label">Total de Aves</div>
+                    </div>
+                </div>
+            </div>';
+
+        // Agregar información adicional si existe
+        if (isset($alimento->responsable) || isset($alimento->observaciones)) {
+            $html .= '
+            <div class="info-section">
+                <h2>Información Adicional</h2>
+                <table class="info-table">';
+            
+            if (isset($alimento->responsable)) {
+                $html .= '
+                    <tr>
+                        <th>Responsable:</th>
+                        <td>' . $alimento->responsable . '</td>
+                    </tr>';
+            }
+            
+            if (isset($alimento->observaciones)) {
+                $html .= '
+                    <tr>
+                        <th>Observaciones:</th>
+                        <td>' . $alimento->observaciones . '</td>
+                    </tr>';
+            }
+            
+            $html .= '
+                </table>
+            </div>';
+        }
+
+        $html .= '
+            <div class="footer">
+                <p><strong>Generado el:</strong> ' . $generatedAt->format('d/m/Y H:i:s') . '</p>
+                <p><strong>Sistema:</strong> AVICONTROL - Módulo de Información</p>
+                <p>Este es un informe automático generado por el sistema</p>
+            </div>
+        </body>
+        </html>';
+        
+        return $html;
+    }
+
+    /**
+     * Genera HTML simple para PDF
+     */
+    private function generarHtmlSimple($alimento, $generatedAt)
+    {
+        $estado = $alimento->estado ?? 'active';
+        $estadoTexto = $estado === 'active' ? 'Activo' : ($estado === 'cancelled' ? 'Cancelado' : 'Pendiente');
+        
+        return '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Informe Alimento ' . $alimento->id . '</title>
+            <style>
+                body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
+                .header { text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+                .header h1 { color: #007bff; margin: 0; font-size: 18px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f8f9fa; font-weight: bold; width: 30%; }
+                .footer { margin-top: 20px; text-align: center; font-size: 10px; color: #666; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>INFORME DE ALIMENTO - AVICONTROL</h1>
+            </div>
+            
+            <table>
+                <tr><th>ID:</th><td>' . $alimento->id . '</td></tr>
+                <tr><th>Fecha:</th><td>' . ($alimento->fecha_registro ? \Carbon\Carbon::parse($alimento->fecha_registro)->format('d/m/Y H:i') : 'N/A') . '</td></tr>
+                <tr><th>Estado:</th><td>' . $estadoTexto . '</td></tr>
+                <tr><th>Galpón:</th><td>' . ($alimento->galpon_name ?? 'N/A') . '</td></tr>
+                <tr><th>Producto:</th><td>' . ($alimento->producto_name ?? 'N/A') . '</td></tr>
+                <tr><th>Cantidad (kg):</th><td>' . number_format($alimento->cantidad_kg ?? 0, 2) . ' kg</td></tr>
+                <tr><th>Bultos:</th><td>' . ($alimento->cantidad_bultos ?? 0) . '</td></tr>
+                <tr><th>Peso por Bulto:</th><td>' . number_format($alimento->peso_por_bulto ?? 0, 2) . ' kg</td></tr>
+                <tr><th>Número de Aves:</th><td>' . number_format($alimento->numero_aves ?? 0) . '</td></tr>
+            </table>
+            
+            <div class="footer">
+                Generado: ' . $generatedAt->format('d/m/Y H:i:s') . '<br>
+                Sistema: AVICONTROL
+            </div>
+        </body>
+        </html>';
+    }
+
+    /**
+     * Genera HTML descargable como alternativa
+     */
+    private function generarHtmlDescargable($alimento, $generatedAt)
+    {
+        $estado = $alimento->estado ?? 'active';
+        $estadoTexto = $estado === 'active' ? 'Activo' : ($estado === 'cancelled' ? 'Cancelado' : 'Pendiente');
+        
+        $html = '
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Informe de Alimento ' . $alimento->id . ' - AVICONTROL</title>
+            <style>
+                @media print {
+                    body { margin: 0; padding: 15px; }
+                    .no-print { display: none !important; }
+                    .page-break { page-break-before: always; }
+                }
+                
+                body {
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    color: #000;
+                    margin: 0;
+                    padding: 20px;
+                    background-color: white;
+                }
+                
+                .header {
+                    text-align: center;
+                    border-bottom: 3px solid #007bff;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                
+                .header h1 {
+                    color: #007bff;
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: bold;
+                }
+                
+                .header .subtitle {
+                    color: #666;
+                    font-size: 14px;
+                    margin-top: 8px;
+                }
+                
+                .info-section {
+                    margin-bottom: 25px;
+                }
+                
+                .info-section h2 {
+                    color: #007bff;
+                    font-size: 16px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 8px;
+                    margin-bottom: 15px;
+                }
+                
+                .info-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                
+                .info-table th,
+                .info-table td {
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    text-align: left;
+                    font-size: 11px;
+                }
+                
+                .info-table th {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                    width: 35%;
+                }
+                
+                .info-table td {
+                    width: 65%;
+                }
+                
+                .footer {
+                    margin-top: 40px;
+                    text-align: center;
+                    font-size: 10px;
+                    color: #666;
+                    border-top: 2px solid #ddd;
+                    padding-top: 20px;
+                }
+                
+                .status-badge {
+                    display: inline-block;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }
+                
+                .status-active {
+                    background-color: #28a745;
+                    color: white;
+                }
+                
+                .status-cancelled {
+                    background-color: #dc3545;
+                    color: white;
+                }
+                
+                .status-pending {
+                    background-color: #ffc107;
+                    color: #000;
+                }
+                
+                .print-buttons {
+                    text-align: center;
+                    margin: 20px 0;
+                    padding: 20px;
+                    background-color: #f8f9fa;
+                    border-radius: 8px;
+                    border: 1px solid #dee2e6;
+                }
+                
+                .print-btn {
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    margin: 0 10px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    text-decoration: none;
+                    display: inline-block;
+                }
+                
+                .print-btn:hover {
+                    background-color: #0056b3;
+                }
+                
+                .print-btn.secondary {
+                    background-color: #6c757d;
+                }
+                
+                .print-btn.secondary:hover {
+                    background-color: #545b62;
+                }
+                
+                .summary-box {
+                    background-color: #e9ecef;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin: 20px 0;
+                }
+                
+                .summary-box h3 {
+                    margin-top: 0;
+                    color: #495057;
+                    font-size: 14px;
+                }
+                
+                .summary-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
+                    margin-top: 15px;
+                }
+                
+                .summary-item {
+                    text-align: center;
+                    padding: 10px;
+                    background-color: white;
+                    border-radius: 6px;
+                    border: 1px solid #dee2e6;
+                }
+                
+                .summary-item .value {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #007bff;
+                }
+                
+                .summary-item .label {
+                    font-size: 10px;
+                    color: #666;
+                    margin-top: 5px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>INFORME DE ALIMENTO - AVICONTROL</h1>
+                <div class="subtitle">Sistema de Control Avícola</div>
+            </div>
+
+            <div class="info-section">
+                <h2>Información del Registro</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>ID del Registro:</th>
+                        <td><strong>' . $alimento->id . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Fecha de Registro:</th>
+                        <td>' . ($alimento->fecha_registro ? \Carbon\Carbon::parse($alimento->fecha_registro)->format('d/m/Y H:i:s') : 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td>
+                            <span class="status-badge status-' . $estado . '">
+                                ' . $estadoTexto . '
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h2>Información del Galpón</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>Nombre del Galpón:</th>
+                        <td>' . ($alimento->galpon_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>ID del Galpón:</th>
+                        <td>' . ($alimento->poultry_facility_id ?? 'N/A') . '</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h2>Información del Producto</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>Nombre del Producto:</th>
+                        <td>' . ($alimento->producto_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>ID del Producto:</th>
+                        <td>' . ($alimento->product_id ?? 'N/A') . '</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h2>Detalles del Consumo</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>Cantidad (kg):</th>
+                        <td>' . number_format($alimento->cantidad_kg ?? 0, 2) . ' kg</td>
+                    </tr>
+                    <tr>
+                        <th>Cantidad de Bultos:</th>
+                        <td>' . ($alimento->cantidad_bultos ?? 0) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Peso por Bulto:</th>
+                        <td>' . number_format($alimento->peso_por_bulto ?? 0, 2) . ' kg</td>
+                    </tr>
+                    <tr>
+                        <th>Número de Aves:</th>
+                        <td>' . number_format($alimento->numero_aves ?? 0) . '</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="summary-box">
+                <h3>Resumen del Consumo</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="value">' . number_format(($alimento->cantidad_kg ?? 0) + (($alimento->cantidad_bultos ?? 0) * ($alimento->peso_por_bulto ?? 0)), 2) . '</div>
+                        <div class="label">Total Consumido (kg)</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value">' . number_format(($alimento->cantidad_kg ?? 0) / max(($alimento->numero_aves ?? 1), 1) * 1000, 2) . '</div>
+                        <div class="label">Consumo por Ave (g)</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value">' . ($alimento->numero_aves ?? 0) . '</div>
+                        <div class="label">Total de Aves</div>
+                    </div>
+                </div>
+            </div>';
+
+        // Agregar información adicional si existe
+        if (isset($alimento->responsable) || isset($alimento->observaciones)) {
+            $html .= '
+            <div class="info-section">
+                <h2>Información Adicional</h2>
+                <table class="info-table">';
+            
+            if (isset($alimento->responsable)) {
+                $html .= '
+                    <tr>
+                        <th>Responsable:</th>
+                        <td>' . $alimento->responsable . '</td>
+                    </tr>';
+            }
+            
+            if (isset($alimento->observaciones)) {
+                $html .= '
+                    <tr>
+                        <th>Observaciones:</th>
+                        <td>' . $alimento->observaciones . '</td>
+                    </tr>';
+            }
+            
+            $html .= '
+                </table>
+            </div>';
+        }
+
+        $html .= '
+            <div class="footer">
+                <p><strong>Generado el:</strong> ' . $generatedAt->format('d/m/Y H:i:s') . '</p>
+                <p><strong>Sistema:</strong> AVICONTROL - Módulo de Información</p>
+                <p class="text-muted">Este es un informe automático generado por el sistema</p>
+            </div>
+
+            <div class="print-buttons no-print">
+                <a href="#" class="print-btn" onclick="window.print()">
+                    🖨️ Imprimir Informe
+                </a>
+                <a href="#" class="print-btn secondary" onclick="window.close()">
+                    ❌ Cerrar
+                </a>
+            </div>
+        </body>
+        </html>';
+        
+        $filename = 'alimento_' . $alimento->id . '_' . $generatedAt->format('Y-m-d_H-i-s') . '.html';
+        
+        return response($html)
+            ->header('Content-Type', 'text/html; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+    
+    /**
+     * Elimina un registro de alimento
+     */
+    public function eliminarAlimento(Request $request)
+    {
+        try {
+            $id = $request->get('id');
+            
+            if (!$id) {
+                return response()->json(['success' => false, 'message' => 'ID de alimento requerido'], 400);
+            }
+
+            // Verificar si el alimento existe
+            $alimento = \DB::table('avicontrol_food_consumption')->where('id', $id)->first();
+            
+            if (!$alimento) {
+                return response()->json(['success' => false, 'message' => 'Alimento no encontrado'], 404);
+            }
+
+            // Eliminar el registro
+            $deleted = \DB::table('avicontrol_food_consumption')->where('id', $id)->delete();
+            
+            if ($deleted) {
+                // Obtener datos actualizados
+                $estadisticasActualizadas = $this->obtenerEstadisticasAlimentos();
+                $datosActualizados = $this->obtenerDatosAlimentos();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Alimento eliminado correctamente',
+                    'estadisticas' => $estadisticasActualizadas,
+                    'datos' => $datosActualizados
+                ]);
+            } else {
+                return response()->json(['success' => false, 'message' => 'No se pudo eliminar el alimento'], 500);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error eliminando alimento: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error eliminando alimento: ' . $e->getMessage()], 500);
         }
     }
 
@@ -1269,6 +2301,65 @@ class InformationController extends Controller
             return response()->json(['success' => false, 'message' => 'Exportación iniciada']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Actualiza los informes de alimentos cuando se eliminan registros
+     */
+    public function actualizarInformesAlimentos()
+    {
+        try {
+            // Obtener estadísticas actualizadas
+            $estadisticasActualizadas = $this->obtenerEstadisticasAlimentos();
+            $datosActualizados = $this->obtenerDatosAlimentos();
+            
+            return response()->json([
+                'success' => true,
+                'estadisticas' => $estadisticasActualizadas,
+                'datos' => $datosActualizados,
+                'message' => 'Informes actualizados correctamente'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error actualizando informes de alimentos: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar informes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Muestra la vista de costos de producción
+     */
+    public function costosProduccion()
+    {
+        try {
+            // Verificar si la tabla de costos de producción existe
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                return view('avicontrol::admin.information.costos-produccion', [
+                    'productionCosts' => collect([]),
+                    'error' => 'La tabla de costos de producción no está creada. Por favor ejecute las migraciones.'
+                ]);
+            }
+
+            // Obtener costos de producción con paginación
+            $productionCosts = \DB::table('avicontrol_production_costs')
+                ->leftJoin('avicontrol_poultry_facilities', 'avicontrol_production_costs.poultry_facility_id', '=', 'avicontrol_poultry_facilities.id')
+                ->select([
+                    'avicontrol_production_costs.*',
+                    'avicontrol_poultry_facilities.name as facility_name'
+                ])
+                ->orderBy('avicontrol_production_costs.created_at', 'desc')
+                ->paginate(20);
+
+            return view('avicontrol::admin.information.costos-produccion', compact('productionCosts'));
+        } catch (\Exception $e) {
+            \Log::error('Error cargando costos de producción: ' . $e->getMessage());
+            return view('avicontrol::admin.information.costos-produccion', [
+                'productionCosts' => collect([]),
+                'error' => 'Error al cargar los costos de producción: ' . $e->getMessage()
+            ]);
         }
     }
 }

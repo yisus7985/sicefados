@@ -126,7 +126,7 @@
                             </thead>
                             <tbody>
                                 @forelse($consumos as $consumo)
-                                    <tr>
+                                    <tr data-consumo-id="{{ $consumo->id }}">
                                         <td class="align-middle">
                                             <span class="badge bg-light text-dark">
                                                 {{ $consumo->fecha_registro->format('d/m/Y') }}
@@ -171,7 +171,7 @@
                                         <td class="align-middle">
                                             <div class="btn-group btn-group-sm">
                                                 <a href="{{ route('avicontrol.admin.food_consumption.show', $consumo->id) }}" 
-                                                   class="btn btn-outline-info" title="Ver">
+                                                   class="btn btn-outline-info" title="Ver Detalles">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if($consumo->estado === 'active')
@@ -179,15 +179,10 @@
                                                        class="btn btn-outline-warning" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <form action="{{ route('avicontrol.admin.food_consumption.destroy', $consumo->id) }}" 
-                                                          method="POST" style="display: inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-outline-danger" title="Cancelar"
-                                                                onclick="return confirm('¿Está seguro de cancelar este consumo?')">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" class="btn btn-outline-danger" title="Eliminar"
+                                                            onclick="eliminarConsumo({{ $consumo->id }}, '{{ $consumo->galpon->name ?? 'N/A' }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 @endif
                                             </div>
                                         </td>
@@ -222,9 +217,48 @@
         </div>
     @endif
 </div>
+
+<!-- Modal de Confirmación para Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarLabel">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                    Confirmar Eliminación Permanente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>¡Atención!</strong> Esta acción eliminará permanentemente el registro.
+                </div>
+                <p>¿Está seguro de que desea eliminar este registro de consumo?</p>
+                <p class="text-muted mb-0">
+                    <strong>Galpón:</strong> <span id="galponEliminar"></span><br>
+                    <strong>Fecha:</strong> <span id="fechaEliminar"></span><br>
+                    <strong>Esta acción no se puede deshacer y el registro desaparecerá completamente.</strong>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     // Inicializar tooltips
@@ -236,5 +270,127 @@ $(document).ready(function() {
         allowClear: true
     });
 });
+
+// Función para eliminar consumo
+function eliminarConsumo(id, galpon) {
+    // Obtener la fecha de la fila correspondiente
+    const fila = $(`tr[data-consumo-id="${id}"]`);
+    const fecha = fila.find('td:first-child .badge').text();
+    
+    // Configurar el modal
+    $('#galponEliminar').text(galpon);
+    $('#fechaEliminar').text(fecha);
+    $('#formEliminar').attr('action', '{{ url("avicontrol/admin/food_consumption") }}/' + id);
+    
+    // Mostrar el modal
+    $('#modalEliminar').modal('show');
+}
+
+// Manejar el envío del formulario de eliminación
+$('#formEliminar').on('submit', function(e) {
+    e.preventDefault();
+    
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    
+    // Cambiar el botón a estado de carga
+    submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Eliminando...');
+    submitBtn.prop('disabled', true);
+    
+    // Enviar la petición AJAX
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        success: function(response) {
+            if (response.success) {
+                // Mostrar mensaje de éxito
+                mostrarNotificacion(response.message || 'Registro eliminado exitosamente', 'success');
+                
+                // Cerrar el modal
+                $('#modalEliminar').modal('hide');
+                
+                // Eliminar la fila de la tabla sin recargar la página
+                eliminarFilaDeTabla();
+                
+                // Verificar si no hay más registros
+                if ($('tbody tr').length === 0) {
+                    mostrarMensajeSinRegistros();
+                }
+            } else {
+                mostrarNotificacion('Error al eliminar el registro', 'error');
+            }
+            
+            // Restaurar el botón
+            submitBtn.html(originalText);
+            submitBtn.prop('disabled', false);
+        },
+        error: function(xhr) {
+            let mensaje = 'Error al eliminar el registro';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                mensaje = xhr.responseJSON.message;
+            }
+            
+            // Mostrar mensaje de error
+            mostrarNotificacion(mensaje, 'error');
+            
+            // Restaurar el botón
+            submitBtn.html(originalText);
+            submitBtn.prop('disabled', false);
+        }
+    });
+});
+
+// Función para eliminar la fila de la tabla
+function eliminarFilaDeTabla() {
+    // Obtener el ID del consumo que se está eliminando
+    const actionUrl = $('#formEliminar').attr('action');
+    const consumoId = actionUrl.split('/').pop();
+    
+    // Encontrar y eliminar la fila correspondiente
+    $(`tr[data-consumo-id="${consumoId}"]`).fadeOut(400, function() {
+        $(this).remove();
+    });
+}
+
+// Función para mostrar mensaje cuando no hay registros
+function mostrarMensajeSinRegistros() {
+    const tbody = $('tbody');
+    const mensaje = `
+        <tr>
+            <td colspan="9" class="text-center py-4">
+                <div class="text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p class="h5">No hay registros de consumo de alimento</p>
+                    <p class="text-muted">Comience creando un nuevo registro de consumo</p>
+                </div>
+            </td>
+        </tr>
+    `;
+    tbody.html(mensaje);
+}
+
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo) {
+    const alertClass = tipo === 'success' ? 'alert-success' : 'alert-danger';
+    const iconClass = tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+    
+    const notificacion = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <i class="fas ${iconClass} me-2"></i>
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(notificacion);
+    
+    // Auto-ocultar después de 5 segundos
+    setTimeout(function() {
+        notificacion.fadeOut();
+    }, 5000);
+}
 </script>
-@endsection
+@endpush

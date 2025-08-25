@@ -85,6 +85,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- Informes de Costos de Producción -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0 text-danger">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>
+                        Informes de Costos de Producción
+                    </h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <p class="card-text flex-grow-1">
+                        Consulta y analiza los costos de producción por galpón, lote y período.
+                        Resumen de costos totales y por unidad.
+                    </p>
+                    <a href="{{ route('avicontrol.admin.information.costos_produccion') }}" class="btn btn-danger w-100">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        Ver Informes de Costos
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Resumen Estadístico -->
