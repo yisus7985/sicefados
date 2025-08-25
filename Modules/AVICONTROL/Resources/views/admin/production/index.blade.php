@@ -133,21 +133,30 @@
     </div>
 
     <!-- Production Table -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-table me-2"></i>Registros de Producción
-            </h5>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-warning btn-sm" id="bulkActivate" style="display: none;">
-                    <i class="fas fa-check me-1"></i>Activar Seleccionados
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" id="bulkDeactivate" style="display: none;">
-                    <i class="fas fa-pause me-1"></i>Desactivar Seleccionados
-                </button>
-                <button type="button" class="btn btn-danger btn-sm" id="bulkDelete" style="display: none;">
-                    <i class="fas fa-trash me-1"></i>Eliminar Seleccionados
-                </button>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Registros de Producción</h6>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Botones de acciones masivas -->
+                <div class="btn-group bulk-actions" style="display: none;">
+                    <button type="button" class="btn btn-success btn-sm" id="bulkActivate">
+                        <i class="fas fa-check me-1"></i>Activar
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="bulkDeactivate">
+                        <i class="fas fa-pause me-1"></i>Desactivar
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="bulkDelete">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+                <div class="input-group" style="width: 300px;">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Buscar registros...">
+                    <div class="input-group-append">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="card-body">
@@ -157,32 +166,19 @@
                 <input type="hidden" name="ids" id="bulkIds">
                 
                 <div class="table-responsive">
-                    <table class="table table-hover datatable" id="productionsTable">
+                    <table class="table table-bordered" id="productionsTable" width="100%" cellspacing="0">
                         <thead>
                             <tr>
                                 <th width="30">
                                     <input type="checkbox" id="selectAll" class="form-check-input">
                                 </th>
-                                <th>FECHA</th>
-                                <th>TIPO PRODUCCIÓN</th>
-                                <th>GALPÓN</th>
-                                <th>TIPO</th>
-                                <th>CANTIDAD</th>
-                                <th>MORTALIDAD</th>
-                                <th>HUEVOS ROTOS</th>
-                                <th>HUEVOS SUCIOS</th>
-                                <th>PESO PROMEDIO</th>
-                                <th>PESO TOTAL</th>
-                                <th>FECHA SACRIFICIO</th>
-                                <th>RESPONSABLE</th>
-                                <th>VALOR UNIDAD</th>
-                                <th>VALOR TOTAL</th>
-                                <th>DESTINO</th>
-                                <th>OBSERVACIONES</th>
-                                <th>FIRMA RECIBIDO</th>
-                                <th>SEMANA</th>
-                                <th>ESTADO</th>
-                                <th width="150">ACCIONES</th>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Galpón</th>
+                                <th>Cantidad</th>
+                                <th>Valor Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -193,128 +189,97 @@
                                                class="form-check-input production-checkbox">
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark">
-                                            {{ $production->formatted_fecha }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ $production->tipo_produccion === 'huevos' ? 'primary' : 'success' }}">
-                                            {{ $production->tipo_produccion_display }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if($production->galpon)
-                                            <span class="badge bg-info">{{ $production->galpon->name }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
+                                        <strong class="text-dark">{{ $production->formatted_fecha }}</strong>
+                                        @if($production->tipo_produccion === 'huevos')
+                                            @if($production->semana_produccion && $production->semana_produccion !== '')
+                                                <br><small class="text-dark font-weight-bold">{{ $production->semana_produccion }}</small>
+                                            @else
+                                                <br><small class="text-muted">Sin semana</small>
+                                            @endif
                                         @endif
                                     </td>
                                     <td>
                                         @if($production->tipo_produccion === 'huevos')
-                                            <span class="badge bg-primary">{{ $production->tipo }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <strong>{{ number_format($production->cantidad) }}</strong>
-                                    </td>
-                                    <td>
-                                        @if($production->tipo_produccion === 'huevos' && $production->mortalidad_aves > 0)
-                                            <span class="badge bg-danger">{{ number_format($production->mortalidad_aves) }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($production->tipo_produccion === 'huevos' && $production->huevos_rotos > 0)
-                                            <span class="badge bg-danger">{{ $production->huevos_rotos }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($production->tipo_produccion === 'huevos' && $production->huevos_sucios > 0)
-                                            <span class="badge bg-warning">{{ $production->huevos_sucios }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($production->peso_promedio)
-                                            <span class="badge bg-info">
-                                                {{ number_format($production->peso_promedio, 2) }} 
-                                                {{ $production->tipo_produccion === 'huevos' ? 'g/huevo' : 'kg/ave' }}
+                                            <span class="badge badge-primary text-white">
+                                                <i class="fas fa-egg me-1"></i>
+                                                <strong>{{ $production->tipo_produccion_display }}</strong>
                                             </span>
+                                            @if($production->tipo)
+                                                <br><span class="badge badge-info text-white mt-1"><strong>Tipo {{ $production->tipo }}</strong></span>
+                                            @endif
+                                        @else
+                                            <span class="badge badge-success text-white">
+                                                <i class="fas fa-drumstick-bite me-1"></i>
+                                                <strong>{{ $production->tipo_produccion_display }}</strong>
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($production->galpon)
+                                            <strong>{{ $production->galpon->name }}</strong>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($production->peso_total)
-                                            <span class="badge bg-success">{{ number_format($production->peso_total, 2) }} kg</span>
-                                        @else
-                                            <span class="text-muted">-</span>
+                                        <div class="d-flex align-items-center">
+                                            <strong>{{ number_format($production->cantidad) }}</strong>
+                                            @if($production->peso_total)
+                                                <br><small class="text-muted">{{ number_format($production->peso_total, 2) }} kg</small>
+                                            @endif
+                                        </div>
+                                        
+                                        <!-- Quality indicators for eggs -->
+                                        @if($production->tipo_produccion === 'huevos')
+                                            @if($production->mortalidad_aves > 0 || $production->huevos_rotos > 0 || $production->huevos_sucios > 0)
+                                                <div class="mt-1">
+                                                    @if($production->mortalidad_aves > 0)
+                                                        <small class="text-danger"><i class="fas fa-exclamation-triangle"></i> M:{{ $production->mortalidad_aves }}</small>
+                                                    @endif
+                                                    @if($production->huevos_rotos > 0)
+                                                        <small class="text-warning"><i class="fas fa-times-circle"></i> R:{{ $production->huevos_rotos }}</small>
+                                                    @endif
+                                                    @if($production->huevos_sucios > 0)
+                                                        <small class="text-warning"><i class="fas fa-exclamation-circle"></i> S:{{ $production->huevos_sucios }}</small>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <small class="text-success"><i class="fas fa-check-circle"></i> Excelente</small>
+                                            @endif
                                         @endif
                                     </td>
-                                    <td>
-                                        @if($production->tipo_produccion === 'carne' && $production->fecha_sacrificio)
-                                            <span class="badge bg-secondary">{{ $production->fecha_sacrificio->format('d/m/Y') }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($production->responsable_sacrificio)
-                                            <span class="text-info">{{ $production->responsable_sacrificio }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $production->formatted_valor_unidad }}</td>
                                     <td>
                                         <strong class="text-success">{{ $production->formatted_valor_total }}</strong>
-                                    </td>
-                                    <td>{{ $production->destino }}</td>
-                                    <td>
-                                        @if($production->observaciones)
-                                            <span class="text-muted">{{ $production->observaciones }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $production->firma_recibido }}</td>
-                                    <td>
-                                        @if($production->tipo_produccion === 'huevos' && $production->semana_produccion)
-                                            <span class="badge bg-info">{{ $production->semana_produccion }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
+                                        <br><small class="text-muted">{{ $production->formatted_valor_unidad }}</small>
                                     </td>
                                     <td>
                                         @if($production->estado === 'activo')
-                                            <span class="badge bg-success">Activo</span>
+                                            <span class="badge badge-success">Activo</span>
                                         @else
-                                            <span class="badge bg-secondary">Inactivo</span>
+                                            <span class="badge badge-secondary">Inactivo</span>
+                                        @endif
+                                        
+                                        @if($production->destino)
+                                            <br><small class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ $production->destino }}</small>
                                         @endif
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm" role="group">
+                                        <div class="btn-group" role="group">
                                             <a href="{{ route('avicontrol.admin.production.show', $production->id) }}" 
-                                               class="btn btn-outline-info" title="Ver">
+                                               class="btn btn-sm btn-outline-primary" title="Ver detalles">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="{{ route('avicontrol.admin.production.edit', $production->id) }}" 
-                                               class="btn btn-outline-warning" title="Editar">
+                                               class="btn btn-sm btn-outline-warning" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-secondary toggle-status" 
+                                            <button type="button" class="btn btn-sm btn-outline-secondary toggle-status" 
                                                     data-id="{{ $production->id }}" 
                                                     data-status="{{ $production->estado }}"
                                                     title="{{ $production->estado === 'activo' ? 'Desactivar' : 'Activar' }}">
                                                 <i class="fas fa-{{ $production->estado === 'activo' ? 'pause' : 'play' }}"></i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-danger delete-production" 
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-production" 
                                                     data-id="{{ $production->id }}" title="Eliminar">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -323,7 +288,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="20" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="fas fa-inbox fa-3x mb-3"></i>
                                             <p>No hay registros de producción disponibles</p>
@@ -346,7 +311,7 @@
 
             <!-- Pagination -->
             @if($productions->hasPages())
-                <div class="d-flex justify-content-center mt-4">
+                <div class="d-flex justify-content-center mt-3">
                     {{ $productions->appends(request()->query())->links() }}
                 </div>
             @endif
@@ -401,10 +366,12 @@
 
 @push('styles')
 <style>
+    /* Simple and clean styles similar to inventory */
     .filters-card {
         background: #f8f9fa;
         border: 1px solid #e9ecef;
         border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .filters-card .card-header {
@@ -413,28 +380,6 @@
         border-radius: 10px 10px 0 0;
     }
 
-    .table th {
-        background: #f8f9fa;
-        border-top: none;
-        font-weight: 600;
-        color: #495057;
-    }
-
-    .table td {
-        vertical-align: middle;
-    }
-
-    .badge {
-        font-size: 0.75rem;
-        padding: 0.5em 0.75em;
-    }
-
-    .btn-group-sm .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-
-    /* Estilos para los botones de filtro */
     .filter-btn {
         border-radius: 8px;
         font-weight: 600;
@@ -453,33 +398,92 @@
     }
 
     .filter-btn[data-tipo="huevos"].active {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        background: #007bff;
         border-color: #007bff;
         color: white;
     }
 
     .filter-btn[data-tipo="carne"].active {
-        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        background: #28a745;
         border-color: #28a745;
         color: white;
     }
 
     .filter-btn[data-tipo="todos"].active {
-        background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+        background: #6c757d;
         border-color: #6c757d;
         color: white;
     }
 
-    /* Estilos para el contador de registros */
+    /* Table styles */
+    .table th {
+        background: #f8f9fa;
+        border-top: none;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    /* Text colors for better visibility */
+    .text-dark {
+        color: #212529 !important;
+    }
+
+    .table td strong {
+        color: #212529;
+        font-weight: 600;
+    }
+
+    .table td small {
+        color: #495057;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.5em 0.75em;
+        border-radius: 4px;
+    }
+
+    .badge-primary {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+
+    .badge-success {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+
+    .badge-info {
+        background-color: #17a2b8 !important;
+        color: white !important;
+    }
+
+    .text-white {
+        color: white !important;
+    }
+
+    .font-weight-bold {
+        font-weight: 600 !important;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Counter & Messages */
     #visibleCount {
         border-radius: 10px;
         border: none;
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        background: #e3f2fd;
         color: #1565c0;
         font-weight: 500;
     }
 
-    /* Estilos para el mensaje de filtro */
     #filterMessage {
         border-radius: 10px;
         border: none;
@@ -502,17 +506,25 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Initialize DataTable
-    const table = $('#productionsTable').DataTable({
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-        },
-        responsive: true,
-        pageLength: 25,
-        order: [[1, 'desc']],
-        columnDefs: [
-            { orderable: false, targets: [0, 19] }
-        ]
+    // Search functionality similar to inventory
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const table = document.getElementById('productionsTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let row of rows) {
+            const cells = row.getElementsByTagName('td');
+            let found = false;
+            
+            for (let cell of cells) {
+                if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                    found = true;
+                    break;
+                }
+            }
+            
+            row.style.display = found ? '' : 'none';
+        }
     });
 
     // Función para filtrar registros por tipo de producción
@@ -540,11 +552,6 @@ $(document).ready(function() {
         
         // Actualizar contador de registros visibles
         updateVisibleCount(visibleCount, rows.length);
-        
-        // Actualizar DataTable si está inicializado
-        if ($.fn.DataTable.isDataTable('#productionsTable')) {
-            $('#productionsTable').DataTable().draw();
-        }
     }
 
     // Función para actualizar contador de registros visibles
@@ -605,7 +612,7 @@ $(document).ready(function() {
         
         // Crear o actualizar mensaje
         if ($('#filterMessage').length === 0) {
-            $('#productionsTable').before('<div id="filterMessage" class="alert ' + alertClass + ' alert-dismissible fade show mb-3"><i class="fas fa-filter me-2"></i>' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+            $('#productionsCards').before('<div id="filterMessage" class="alert ' + alertClass + ' alert-dismissible fade show mb-3"><i class="fas fa-filter me-2"></i>' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
         } else {
             $('#filterMessage').removeClass().addClass('alert ' + alertClass + ' alert-dismissible fade show mb-3').html('<i class="fas fa-filter me-2"></i>' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>');
         }
@@ -663,11 +670,13 @@ $(document).ready(function() {
         const checkedCount = $('.production-checkbox:checked').length;
         
         if (checkedCount > 0) {
-            $('#bulkActivate, #bulkDeactivate, #bulkDelete').show();
+            $('.bulk-actions').show();
         } else {
-            $('#bulkActivate, #bulkDeactivate, #bulkDelete').hide();
+            $('.bulk-actions').hide();
         }
     }
+
+    
 
     // Bulk Actions
     $('#bulkActivate').click(function() {

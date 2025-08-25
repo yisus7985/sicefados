@@ -79,6 +79,7 @@ Route::middleware(['web', 'lang'])->group(function () {
                 Route::get('/seguimientos', [InformationController::class, 'seguimientos'])->name('seguimientos');
                 Route::get('/costos-produccion', [InformationController::class, 'costosProduccion'])->name('costos_produccion');
                 Route::get('/costos-produccion/exportar-pdf', [InformationController::class, 'exportarCostosProduccionPdf'])->name('costos_produccion.pdf');
+                Route::get('/costos-produccion/exportar-excel', [InformationController::class, 'exportarCostosProduccionExcel'])->name('costos_produccion.excel');
                 Route::get('/costos-produccion/{id}/exportar-pdf', [InformationController::class, 'exportarCostoProduccionPdf'])->name('costos_produccion.pdf_show');
                 Route::get('/{id}', [InformationController::class, 'show'])->name('show');
                 

@@ -197,10 +197,16 @@ class ProductionController extends Controller
                 'galpon_id' => $request->galpon_id ?? 1, // Usar ID 1 como prueba
                 'tipo' => $request->tipo ?? 'A',
                 'cantidad' => $request->cantidad ?? 1,
+                'mortalidad_aves' => $request->mortalidad_aves ?? 0,
+                'huevos_rotos' => $request->huevos_rotos ?? 0,
+                'huevos_sucios' => $request->huevos_sucios ?? 0,
                 'valor_unidad' => $request->valor_unidad ?? 100,
                 'valor_total' => ($request->cantidad ?? 1) * ($request->valor_unidad ?? 100),
                 'destino' => $request->destino ?? 'Prueba',
                 'firma_recibido' => $request->firma_recibido ?? 'Prueba',
+                'semana_produccion' => $request->semana_produccion, // ¡AQUÍ ESTABA EL PROBLEMA!
+                'firma_lider' => $request->firma_lider,
+                'observaciones' => $request->observaciones,
                 'estado' => 'activo'
             ];
             
@@ -310,11 +316,10 @@ class ProductionController extends Controller
                 'estado' => 'activo'
             ];
             
-            \Log::info('Datos a crear:', $dataToCreate);
-            
             try {
                 $production = Production::create($dataToCreate);
                 \Log::info('Production::create() ejecutado exitosamente');
+                
             } catch (\Exception $e) {
                 \Log::error('Error en Production::create():', ['error' => $e->getMessage()]);
                 \Log::error('Stack trace:', ['trace' => $e->getTraceAsString()]);

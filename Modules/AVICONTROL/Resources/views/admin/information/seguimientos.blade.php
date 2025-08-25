@@ -18,6 +18,160 @@
                 </h2>
                 <p class="text-muted mb-0">Sistema de monitoreo y análisis de crecimiento avícola</p>
             </div>
+            <div class="col-auto">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-success btn-sm" id="exportar-excel" data-bs-toggle="modal" data-bs-target="#modalFiltrosExportacion" data-formato="excel">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="exportar-pdf" data-bs-toggle="modal" data-bs-target="#modalFiltrosExportacion" data-formato="pdf">
+                        <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Filtros de Exportación -->
+    <div class="modal fade" id="modalFiltrosExportacion" tabindex="-1" aria-labelledby="modalFiltrosExportacionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalFiltrosExportacionLabel">
+                        <i class="fas fa-filter me-2"></i>Filtros de Exportación - Seguimientos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formFiltrosExportacion">
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Selecciona el período:</strong> Elige el rango de fechas para tu reporte de seguimiento de aves.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipoPeriodo" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Tipo de Período
+                                </label>
+                                <select class="form-select" id="tipoPeriodo" name="tipo_periodo" required>
+                                    <option value="">Seleccionar período...</option>
+                                    <option value="todo">📊 Todos los datos</option>
+                                    <option value="hoy">📅 Solo hoy</option>
+                                    <option value="semanal">📅 Esta semana</option>
+                                    <option value="mensual">📅 Este mes</option>
+                                    <option value="anual">📅 Este año</option>
+                                    <option value="personalizado">🎯 Rango personalizado</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="estadoFiltro" class="form-label">
+                                    <i class="fas fa-heartbeat me-1"></i>Estado de las Aves
+                                </label>
+                                <select class="form-select" id="estadoFiltro" name="estado">
+                                    <option value="">Todos los estados</option>
+                                    <option value="active">🟢 Solo activas</option>
+                                    <option value="inactive">🔴 Solo inactivas</option>
+                                    <option value="sold">💰 Vendidas</option>
+                                    <option value="deceased">💀 Fallecidas</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Campos de fecha personalizada (ocultos por defecto) -->
+                        <div class="row" id="camposFechaPersonalizada" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-plus me-1"></i>Fecha Inicio
+                                </label>
+                                <input type="date" class="form-control" id="fechaInicio" name="fecha_inicio">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaFin" class="form-label">
+                                    <i class="fas fa-calendar-minus me-1"></i>Fecha Fin
+                                </label>
+                                <input type="date" class="form-control" id="fechaFin" name="fecha_fin">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="galponFiltro" class="form-label">
+                                    <i class="fas fa-home me-1"></i>Galpón Específico
+                                </label>
+                                <select class="form-select" id="galponFiltro" name="galpon_id">
+                                    <option value="">Todos los galpones</option>
+                                    @if(isset($galpones))
+                                        @foreach($galpones as $galpon)
+                                            <option value="{{ $galpon->id }}">{{ $galpon->name ?? 'Galpón ' . $galpon->id }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="ordenamiento" class="form-label">
+                                    <i class="fas fa-sort me-1"></i>Ordenar por
+                                </label>
+                                <select class="form-select" id="ordenamiento" name="ordenamiento">
+                                    <option value="fecha_desc">Fecha (más reciente primero)</option>
+                                    <option value="fecha_asc">Fecha (más antiguo primero)</option>
+                                    <option value="peso_desc">Peso (mayor a menor)</option>
+                                    <option value="peso_asc">Peso (menor a mayor)</option>
+                                    <option value="edad_desc">Edad (mayor a menor)</option>
+                                    <option value="edad_asc">Edad (menor a mayor)</option>
+                                    <option value="galpon_asc">Galpón (A-Z)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Filtros avanzados -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pesoMinimo" class="form-label">
+                                    <i class="fas fa-weight-hanging me-1"></i>Peso Mínimo (g)
+                                </label>
+                                <input type="number" class="form-control" id="pesoMinimo" name="peso_minimo" placeholder="Ej: 1000">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="pesoMaximo" class="form-label">
+                                    <i class="fas fa-weight-hanging me-1"></i>Peso Máximo (g)
+                                </label>
+                                <input type="number" class="form-control" id="pesoMaximo" name="peso_maximo" placeholder="Ej: 3000">
+                            </div>
+                        </div>
+
+                        <!-- Resumen de filtros -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-eye me-1"></i>Vista previa de filtros:
+                                        </h6>
+                                        <div id="resumenFiltros" class="text-muted">
+                                            Selecciona un período para ver el resumen...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="aplicarFiltrosYExportar">
+                        <i class="fas fa-download me-1"></i>Exportar con Filtros
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
             
@@ -274,10 +428,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 $(document).ready(function() {
+    console.log('=== AVICONTROL SEGUIMIENTOS - INICIANDO ===');
+    
     // Cargar datos iniciales desde el servidor
     cargarDatosIniciales();
     
-    // Se removieron filtros y eventos asociados
+    // Configurar event listeners para filtros
+    configurarEventListeners();
     
     // Cambio de tipo de gráfica
     $('.btn-group .btn').on('click', function() {
@@ -553,6 +710,202 @@ $(document).ready(function() {
     function formatearFecha(fecha) {
         return new Date(fecha).toLocaleDateString('es-ES');
     }
+    
+    // Funciones para el sistema de filtros
+    function configurarEventListeners() {
+        // Modal de filtros de exportación
+        let formatoSeleccionado = '';
+        
+        // Capturar el formato cuando se abre el modal
+        $('#exportar-excel, #exportar-pdf').on('click', function() {
+            formatoSeleccionado = $(this).data('formato');
+            $('#modalFiltrosExportacionLabel').html(`<i class="fas fa-filter me-2"></i>Filtros de Exportación - Seguimientos - ${formatoSeleccionado.toUpperCase()}`);
+        });
+        
+        // Mostrar/ocultar campos de fecha personalizada
+        $('#tipoPeriodo').on('change', function() {
+            const valor = $(this).val();
+            if (valor === 'personalizado') {
+                $('#camposFechaPersonalizada').show();
+                $('#fechaInicio, #fechaFin').prop('required', true);
+            } else {
+                $('#camposFechaPersonalizada').hide();
+                $('#fechaInicio, #fechaFin').prop('required', false);
+            }
+            actualizarResumenFiltros();
+        });
+        
+        // Actualizar resumen cuando cambien los filtros
+        $('#tipoPeriodo, #estadoFiltro, #galponFiltro, #ordenamiento, #fechaInicio, #fechaFin, #pesoMinimo, #pesoMaximo').on('change input', function() {
+            actualizarResumenFiltros();
+        });
+        
+        // Aplicar filtros y exportar
+        $('#aplicarFiltrosYExportar').on('click', function() {
+            const filtros = obtenerFiltrosSeleccionados();
+            if (validarFiltros(filtros)) {
+                $('#modalFiltrosExportacion').modal('hide');
+                exportarDatosConFiltros(formatoSeleccionado, filtros);
+            }
+        });
+    }
+    
+    function exportarDatosConFiltros(formato, filtros) {
+        mostrarNotificacion(`Iniciando exportación a ${formato.toUpperCase()} con filtros...`, 'info');
+        
+        const btn = $(`#exportar-${formato}`);
+        const originalText = btn.html();
+        btn.html(`<i class="fas fa-spinner fa-spin me-2"></i>Exportando...`);
+        btn.prop('disabled', true);
+        
+        // Construir URL con parámetros de filtro
+        const baseUrl = formato === 'excel' 
+            ? '{{ route("avicontrol.admin.information.seguimientos.excel") }}'
+            : '{{ route("avicontrol.admin.information.seguimientos.pdf") }}';
+        
+        const params = new URLSearchParams();
+        Object.keys(filtros).forEach(key => {
+            if (filtros[key] && filtros[key] !== '') {
+                params.append(key, filtros[key]);
+            }
+        });
+        
+        const urlConFiltros = `${baseUrl}?${params.toString()}`;
+        
+        setTimeout(() => {
+            window.location.href = urlConFiltros;
+            mostrarNotificacion(`${formato.toUpperCase()} con filtros descargado exitosamente`, 'success');
+            
+            setTimeout(() => {
+                btn.html(originalText);
+                btn.prop('disabled', false);
+            }, 2000);
+        }, 500);
+    }
+    
+    function obtenerFiltrosSeleccionados() {
+        return {
+            tipo_periodo: $('#tipoPeriodo').val(),
+            estado: $('#estadoFiltro').val(),
+            galpon_id: $('#galponFiltro').val(),
+            ordenamiento: $('#ordenamiento').val(),
+            fecha_inicio: $('#fechaInicio').val(),
+            fecha_fin: $('#fechaFin').val(),
+            peso_minimo: $('#pesoMinimo').val(),
+            peso_maximo: $('#pesoMaximo').val()
+        };
+    }
+    
+    function validarFiltros(filtros) {
+        if (!filtros.tipo_periodo) {
+            mostrarNotificacion('Por favor selecciona un tipo de período', 'error');
+            return false;
+        }
+        
+        if (filtros.tipo_periodo === 'personalizado') {
+            if (!filtros.fecha_inicio || !filtros.fecha_fin) {
+                mostrarNotificacion('Para rango personalizado debes especificar fecha de inicio y fin', 'error');
+                return false;
+            }
+            
+            if (new Date(filtros.fecha_inicio) > new Date(filtros.fecha_fin)) {
+                mostrarNotificacion('La fecha de inicio debe ser anterior a la fecha de fin', 'error');
+                return false;
+            }
+        }
+        
+        if (filtros.peso_minimo && filtros.peso_maximo) {
+            if (parseInt(filtros.peso_minimo) > parseInt(filtros.peso_maximo)) {
+                mostrarNotificacion('El peso mínimo debe ser menor que el peso máximo', 'error');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    function actualizarResumenFiltros() {
+        const filtros = obtenerFiltrosSeleccionados();
+        let resumen = [];
+        
+        // Período
+        if (filtros.tipo_periodo) {
+            const periodos = {
+                'todo': '📊 Todos los datos disponibles',
+                'hoy': '📅 Solo registros de hoy',
+                'semanal': '📅 Registros de esta semana',
+                'mensual': '📅 Registros de este mes',
+                'anual': '📅 Registros de este año',
+                'personalizado': `🎯 Del ${filtros.fecha_inicio || '...'} al ${filtros.fecha_fin || '...'}`
+            };
+            resumen.push(`<strong>Período:</strong> ${periodos[filtros.tipo_periodo]}`);
+        }
+        
+        // Estado
+        if (filtros.estado) {
+            const estados = {
+                'active': '🟢 Solo aves activas',
+                'inactive': '🔴 Solo aves inactivas',
+                'sold': '💰 Solo aves vendidas',
+                'deceased': '💀 Solo aves fallecidas'
+            };
+            resumen.push(`<strong>Estado:</strong> ${estados[filtros.estado]}`);
+        } else {
+            resumen.push(`<strong>Estado:</strong> Todos los estados`);
+        }
+        
+        // Galpón
+        if (filtros.galpon_id) {
+            const galponTexto = $('#galponFiltro option:selected').text();
+            resumen.push(`<strong>Galpón:</strong> ${galponTexto}`);
+        } else {
+            resumen.push(`<strong>Galpón:</strong> Todos los galpones`);
+        }
+        
+        // Filtros de peso
+        if (filtros.peso_minimo || filtros.peso_maximo) {
+            let pesoFiltro = '<strong>Peso:</strong> ';
+            if (filtros.peso_minimo && filtros.peso_maximo) {
+                pesoFiltro += `Entre ${filtros.peso_minimo}g y ${filtros.peso_maximo}g`;
+            } else if (filtros.peso_minimo) {
+                pesoFiltro += `Mínimo ${filtros.peso_minimo}g`;
+            } else if (filtros.peso_maximo) {
+                pesoFiltro += `Máximo ${filtros.peso_maximo}g`;
+            }
+            resumen.push(pesoFiltro);
+        }
+        
+        // Ordenamiento
+        if (filtros.ordenamiento) {
+            const ordenTexto = $('#ordenamiento option:selected').text();
+            resumen.push(`<strong>Orden:</strong> ${ordenTexto}`);
+        }
+        
+        const resumenHtml = resumen.length > 0 
+            ? resumen.join('<br>') 
+            : 'Selecciona un período para ver el resumen...';
+        
+        $('#resumenFiltros').html(resumenHtml);
+    }
+    
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        const notificacion = $(`
+            <div class="alert alert-${tipo} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        $('body').append(notificacion);
+        
+        setTimeout(() => {
+            notificacion.fadeOut(() => notificacion.remove());
+        }, 5000);
+    }
+    
+    console.log('=== AVICONTROL SEGUIMIENTOS - INICIALIZADO ===');
 });
 </script>
 @endpush

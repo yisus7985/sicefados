@@ -105,55 +105,107 @@ class InformationController extends Controller
     public function exportarCostosProduccionPdf(Request $request)
     {
         try {
-            if (!\Schema::hasTable('avicontrol_production_costs')) {
-                return redirect()->back()->with('error', 'La tabla de costos de producción no existe.');
-            }
-
-            // Obtener TODOS los costos con nombre del galpón
-            $productionCosts = \DB::table('avicontrol_production_costs')
-                ->leftJoin('avicontrol_poultry_facilities', 'avicontrol_production_costs.poultry_facility_id', '=', 'avicontrol_poultry_facilities.id')
-                ->select([
-                    'avicontrol_production_costs.*',
-                    'avicontrol_poultry_facilities.name as facility_name'
-                ])
-                ->orderBy('avicontrol_production_costs.created_at', 'desc')
-                ->get();
-
-            $generatedAt = now();
-
-            // Forzar HTML si se solicita: ?format=html
-            if ($request->query('format') === 'html') {
-                return view('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
-            }
-
-            // Si DomPDF no está disponible, retornar HTML imprimible
+            \Log::info('Iniciando exportación a PDF de costos de producción');
+            
+            // Verificar que la clase de PDF exista
             if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
-                return view('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de PDF no está disponible. Asegúrese de que barryvdh/laravel-dompdf esté instalado.'
+                ], 500);
             }
-
-            // Generar PDF con opciones seguras
-            try {
-                \Barryvdh\DomPDF\Facade\Pdf::setOptions([
-                    'isRemoteEnabled' => false,
-                    'isHtml5ParserEnabled' => true,
-                    'defaultFont' => 'DejaVu Sans',
-                    'dpi' => 96,
-                ]);
-
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
-                $pdf->setPaper('a4', 'landscape');
-
-                $filename = 'costos_produccion_' . $generatedAt->format('Y-m-d_H-i-s') . '.pdf';
-                return $pdf->download($filename);
-            } catch (\Throwable $e) {
-                \Log::error('Fallo generando PDF listado de costos: ' . $e->getMessage());
-                // Fallback a HTML para no colgar la petición
-                return view('avicontrol::admin.information.pdf.costos-produccion', compact('productionCosts', 'generatedAt'));
+            
+            // Configurar opciones de PDF
+            \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+                'defaultFont' => 'DejaVu Sans',
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'chroot' => public_path(),
+            ]);
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosCostosRequest($request);
+            $datosCostos = $this->obtenerDatosCostosConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasCostosConFiltros($filtros);
+            $generatedAt = now()->format('d/m/Y H:i:s');
+            
+            if ($datosCostos->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de costos para exportar con los filtros seleccionados'
+                ], 404);
             }
+            
+            // Generar PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('avicontrol::admin.information.pdf.production-cost-report', [
+                'data' => $datosCostos,
+                'estadisticas' => $estadisticas,
+                'generatedAt' => $generatedAt,
+                'filtros' => $filtros
+            ]);
+            
+            $pdf->setPaper('A4', 'landscape');
+            
+            $fileName = 'informe_costos_produccion_' . $this->generarNombreArchivoCostosConFiltros($filtros) . '.pdf';
+            
+            \Log::info('Exportación a PDF completada: ' . $fileName);
+            
+            // Forzar descarga directa del PDF
+            return $pdf->download($fileName);
+            
         } catch (\Exception $e) {
-            \Log::error('Error exportando PDF de costos de producción: ' . $e->getMessage());
-            return redirect()->route('avicontrol.admin.information.costos_produccion')
-                ->with('error', 'No se pudo generar el PDF: ' . $e->getMessage());
+            \Log::error('Error en exportación a PDF: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Exporta costos de producción a Excel
+     */
+    public function exportarCostosProduccionExcel(Request $request)
+    {
+        try {
+            \Log::info('Iniciando exportación a Excel de costos de producción');
+            
+            // Verificar que la clase de Excel exista
+            if (!class_exists(\Maatwebsite\Excel\Facades\Excel::class)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de Excel no está disponible. Asegúrese de que maatwebsite/excel esté instalado.'
+                ], 500);
+            }
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosCostosRequest($request);
+            $datosCostos = $this->obtenerDatosCostosConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasCostosConFiltros($filtros);
+            
+            if ($datosCostos->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de costos para exportar con los filtros seleccionados'
+                ], 404);
+            }
+            
+            $fileName = 'informe_costos_produccion_' . $this->generarNombreArchivoCostosConFiltros($filtros) . '.xlsx';
+            
+            // Crear el export
+            $export = new \Modules\AVICONTROL\Exports\ProductionCostReportExport($datosCostos, $estadisticas);
+            
+            \Log::info('Exportación a Excel completada: ' . $fileName);
+            
+            // Forzar descarga directa del Excel
+            return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en exportación a Excel: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a Excel: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -1393,10 +1445,44 @@ class InformationController extends Controller
     public function exportarProduccionExcel(Request $request)
     {
         try {
-            // Implementar exportación a Excel
-            return response()->json(['success' => true, 'message' => 'Exportación iniciada']);
+            \Log::info('Iniciando exportación a Excel de informes de producción');
+            
+            // Verificar que la clase de Excel exista
+            if (!class_exists(\Maatwebsite\Excel\Facades\Excel::class)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de Excel no está disponible. Asegúrese de que maatwebsite/excel esté instalado.'
+                ], 500);
+            }
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosRequest($request);
+            $datosProduccion = $this->obtenerDatosProduccionConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasProduccionConFiltros($filtros);
+            
+            if ($datosProduccion->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de producción para exportar con los filtros seleccionados'
+                ], 404);
+            }
+            
+            $fileName = 'informe_produccion_' . $this->generarNombreArchivoConFiltros($filtros) . '.xlsx';
+            
+            // Crear el export
+            $export = new \Modules\AVICONTROL\Exports\ProductionReportExport($datosProduccion, $estadisticas);
+            
+            \Log::info('Exportación a Excel completada: ' . $fileName);
+            
+            // Forzar descarga directa del Excel
+            return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+            
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Log::error('Error en exportación a Excel: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a Excel: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -1406,10 +1492,60 @@ class InformationController extends Controller
     public function exportarProduccionPdf(Request $request)
     {
         try {
-            // Implementar exportación a PDF
-            return response()->json(['success' => true, 'message' => 'Exportación iniciada']);
+            \Log::info('Iniciando exportación a PDF de informes de producción');
+            
+            // Verificar que la clase de PDF exista
+            if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de PDF no está disponible. Asegúrese de que barryvdh/laravel-dompdf esté instalado.'
+                ], 500);
+            }
+            
+            // Configurar opciones de PDF
+            \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+                'defaultFont' => 'DejaVu Sans',
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'chroot' => public_path(),
+            ]);
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosRequest($request);
+            $datosProduccion = $this->obtenerDatosProduccionConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasProduccionConFiltros($filtros);
+            $generatedAt = now()->format('d/m/Y H:i:s');
+            
+            if ($datosProduccion->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de producción para exportar con los filtros seleccionados'
+                ], 404);
+            }
+            
+            // Generar PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('avicontrol::admin.information.pdf.production-report', [
+                'data' => $datosProduccion,
+                'estadisticas' => $estadisticas,
+                'generatedAt' => $generatedAt,
+                'filtros' => $filtros
+            ]);
+            
+            $pdf->setPaper('A4', 'landscape');
+            
+            $fileName = 'informe_produccion_' . $this->generarNombreArchivoConFiltros($filtros) . '.pdf';
+            
+            \Log::info('Exportación a PDF completada: ' . $fileName);
+            
+            // Forzar descarga directa del PDF
+            return $pdf->download($fileName);
+            
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Log::error('Error en exportación a PDF: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a PDF: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -1419,10 +1555,107 @@ class InformationController extends Controller
     public function exportarAlimentosExcel(Request $request)
     {
         try {
-            // Implementar exportación a Excel
-            return response()->json(['success' => true, 'message' => 'Exportación iniciada']);
+            \Log::info('Iniciando exportación a Excel de informes de alimentos');
+            
+            // Verificar que la clase de Excel exista
+            if (!class_exists(\Maatwebsite\Excel\Facades\Excel::class)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de Excel no está disponible. Asegúrese de que maatwebsite/excel esté instalado.'
+                ], 500);
+            }
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosAlimentosRequest($request);
+            $datosAlimentos = $this->obtenerDatosAlimentosConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasAlimentosConFiltros($filtros);
+            
+            if ($datosAlimentos->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de alimentos para exportar con los filtros seleccionados'
+                ], 404);
+            }
+            
+            $fileName = 'informe_alimentos_' . $this->generarNombreArchivoAlimentosConFiltros($filtros) . '.xlsx';
+            
+            // Crear el export
+            $export = new \Modules\AVICONTROL\Exports\FoodConsumptionReportExport($datosAlimentos, $estadisticas);
+            
+            \Log::info('Exportación a Excel completada: ' . $fileName);
+            
+            // Forzar descarga directa del Excel
+            return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+            
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Log::error('Error en exportación a Excel: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a Excel: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Exporta informes de alimentos a PDF
+     */
+    public function exportarAlimentosPdf(Request $request)
+    {
+        try {
+            \Log::info('Iniciando exportación a PDF de informes de alimentos');
+            
+            // Verificar que la clase de PDF exista
+            if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de PDF no está disponible. Asegúrese de que barryvdh/laravel-dompdf esté instalado.'
+                ], 500);
+            }
+            
+            // Configurar opciones de PDF
+            \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+                'defaultFont' => 'DejaVu Sans',
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'chroot' => public_path(),
+            ]);
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosAlimentosRequest($request);
+            $datosAlimentos = $this->obtenerDatosAlimentosConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasAlimentosConFiltros($filtros);
+            $generatedAt = now()->format('d/m/Y H:i:s');
+            
+            if ($datosAlimentos->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de alimentos para exportar con los filtros seleccionados'
+                ], 404);
+            }
+            
+            // Generar PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('avicontrol::admin.information.pdf.food-consumption-report', [
+                'data' => $datosAlimentos,
+                'estadisticas' => $estadisticas,
+                'generatedAt' => $generatedAt,
+                'filtros' => $filtros
+            ]);
+            
+            $pdf->setPaper('A4', 'landscape');
+            
+            $fileName = 'informe_alimentos_' . $this->generarNombreArchivoAlimentosConFiltros($filtros) . '.pdf';
+            
+            \Log::info('Exportación a PDF completada: ' . $fileName);
+            
+            // Forzar descarga directa del PDF
+            return $pdf->download($fileName);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en exportación a PDF: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a PDF: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -2284,10 +2517,44 @@ class InformationController extends Controller
     public function exportarSeguimientosExcel(Request $request)
     {
         try {
-            // Implementar exportación a Excel
-            return response()->json(['success' => true, 'message' => 'Exportación iniciada']);
+            \Log::info('Iniciando exportación a Excel de seguimientos');
+            
+            // Verificar que la clase de Excel exista
+            if (!class_exists(\Maatwebsite\Excel\Facades\Excel::class)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de Excel no está disponible. Asegúrese de que maatwebsite/excel esté instalado.'
+                ], 500);
+            }
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosSeguimientosRequest($request);
+            $datosSeguimientos = $this->obtenerDatosSeguimientosConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasSeguimientosConFiltros($filtros);
+            
+            if ($datosSeguimientos->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de seguimientos para exportar con los filtros seleccionados'
+                ], 404);
+            }
+            
+            $fileName = 'informe_seguimientos_' . $this->generarNombreArchivoSeguimientosConFiltros($filtros) . '.xlsx';
+            
+            // Crear el export
+            $export = new \Modules\AVICONTROL\Exports\BirdTrackingReportExport($datosSeguimientos, $estadisticas);
+            
+            \Log::info('Exportación a Excel completada: ' . $fileName);
+            
+            // Forzar descarga directa del Excel
+            return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+            
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Log::error('Error en exportación a Excel: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a Excel: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -2297,10 +2564,60 @@ class InformationController extends Controller
     public function exportarSeguimientosPdf(Request $request)
     {
         try {
-            // Implementar exportación a PDF
-            return response()->json(['success' => false, 'message' => 'Exportación iniciada']);
+            \Log::info('Iniciando exportación a PDF de seguimientos');
+            
+            // Verificar que la clase de PDF exista
+            if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'La librería de PDF no está disponible. Asegúrese de que barryvdh/laravel-dompdf esté instalado.'
+                ], 500);
+            }
+            
+            // Configurar opciones de PDF
+            \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+                'defaultFont' => 'DejaVu Sans',
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'chroot' => public_path(),
+            ]);
+            
+            // Obtener datos con filtros
+            $filtros = $this->procesarFiltrosSeguimientosRequest($request);
+            $datosSeguimientos = $this->obtenerDatosSeguimientosConFiltros($filtros);
+            $estadisticas = $this->obtenerEstadisticasSeguimientosConFiltros($filtros);
+            $generatedAt = now()->format('d/m/Y H:i:s');
+            
+            if ($datosSeguimientos->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay datos de seguimientos para exportar con los filtros seleccionados'
+                ], 404);
+            }
+            
+            // Generar PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('avicontrol::admin.information.pdf.bird-tracking-report', [
+                'data' => $datosSeguimientos,
+                'estadisticas' => $estadisticas,
+                'generatedAt' => $generatedAt,
+                'filtros' => $filtros
+            ]);
+            
+            $pdf->setPaper('A4', 'landscape');
+            
+            $fileName = 'informe_seguimientos_' . $this->generarNombreArchivoSeguimientosConFiltros($filtros) . '.pdf';
+            
+            \Log::info('Exportación a PDF completada: ' . $fileName);
+            
+            // Forzar descarga directa del PDF
+            return $pdf->download($fileName);
+            
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Log::error('Error en exportación a PDF: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al exportar a PDF: ' . $e->getMessage()
+            ], 500);
         }
     }
     
@@ -2360,6 +2677,1289 @@ class InformationController extends Controller
                 'productionCosts' => collect([]),
                 'error' => 'Error al cargar los costos de producción: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Procesa los filtros del request
+     */
+    private function procesarFiltrosRequest($request)
+    {
+        return [
+            'tipo_periodo' => $request->get('tipo_periodo', 'todo'),
+            'tipo_produccion' => $request->get('tipo_produccion'),
+            'galpon_id' => $request->get('galpon_id'),
+            'ordenamiento' => $request->get('ordenamiento', 'fecha_desc'),
+            'fecha_inicio' => $request->get('fecha_inicio'),
+            'fecha_fin' => $request->get('fecha_fin')
+        ];
+    }
+
+    /**
+     * Obtiene datos de producción aplicando filtros
+     */
+    private function obtenerDatosProduccionConFiltros($filtros)
+    {
+        try {
+            \Log::info('Obteniendo datos de producción con filtros: ' . json_encode($filtros));
+            
+            $query = Production::with(['galpon']);
+            
+            // Aplicar filtros de fecha
+            $this->aplicarFiltrosFecha($query, $filtros);
+            
+            // Filtro por tipo de producción
+            if (!empty($filtros['tipo_produccion'])) {
+                $query->where('tipo_produccion', $filtros['tipo_produccion']);
+            }
+            
+            // Filtro por galpón
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('galpon_id', $filtros['galpon_id']);
+            }
+            
+            // Aplicar ordenamiento
+            $this->aplicarOrdenamiento($query, $filtros['ordenamiento']);
+            
+            // Limitar resultados para evitar sobrecarga
+            $query->limit(1000);
+            
+            $producciones = $query->get();
+            
+            \Log::info('Producciones encontradas con filtros: ' . $producciones->count());
+            
+            return $producciones->map(function($produccion) {
+                return [
+                    'fecha' => $produccion->fecha,
+                    'galpon' => $produccion->galpon ? $produccion->galpon->name : 'N/A',
+                    'galpon_id' => $produccion->galpon_id,
+                    'tipo_produccion' => $produccion->tipo_produccion ?? 'huevos',
+                    'tipo' => $produccion->tipo ?? 'N/A',
+                    'cantidad' => $produccion->cantidad ?? 0,
+                    'mortalidad_aves' => $produccion->mortalidad_aves ?? 0,
+                    'total_aves' => $this->obtenerAvesEnGalpon($produccion->galpon_id, $produccion->fecha),
+                    'produccion' => $produccion->cantidad ?? 0,
+                    'huevos_buenos' => $produccion->cantidad - ($produccion->huevos_rotos ?? 0) - ($produccion->huevos_sucios ?? 0),
+                    'huevos_rotos' => $produccion->huevos_rotos ?? 0,
+                    'huevos_sucios' => $produccion->huevos_sucios ?? 0,
+                    'porcentaje' => $this->calcularPorcentajeProduccion($produccion),
+                    'peso_promedio' => $produccion->peso_promedio ?? 0,
+                    'peso_total' => $produccion->peso_total ?? 0,
+                    'valor_unidad' => $produccion->valor_unidad ?? 0,
+                    'valor_total' => $produccion->valor_total ?? 0,
+                    'destino' => $produccion->destino ?? 'N/A',
+                    'semana_produccion' => $produccion->semana_produccion ?? 'N/A',
+                    'semana' => $produccion->semana_produccion ?? 'N/A',
+                    'estado' => $produccion->estado ?? 'N/A',
+                    'observaciones' => $produccion->observaciones ?? 'Sin observaciones'
+                ];
+            });
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo datos de producción con filtros: ' . $e->getMessage());
+            return collect([]);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de producción con filtros
+     */
+    private function obtenerEstadisticasProduccionConFiltros($filtros)
+    {
+        try {
+            $query = Production::query();
+            $this->aplicarFiltrosFecha($query, $filtros);
+            
+            if (!empty($filtros['tipo_produccion'])) {
+                $query->where('tipo_produccion', $filtros['tipo_produccion']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('galpon_id', $filtros['galpon_id']);
+            }
+            
+            $hoy = now()->toDateString();
+            $queryHoy = clone $query;
+            $queryHoy->whereDate('fecha', $hoy);
+            
+            return [
+                'total_produccion' => $query->sum('cantidad') ?? 0,
+                'produccion_hoy' => $queryHoy->sum('cantidad') ?? 0,
+                'produccion_mes' => (clone $query)->whereBetween('fecha', [now()->startOfMonth(), now()])->sum('cantidad') ?? 0,
+                'promedio_diario' => $this->calcularPromedioDiarioProduccionConFiltros($filtros),
+                'mejor_galpon' => $this->obtenerMejorGalponProduccionConFiltros($filtros),
+                'total_aves_activas' => Bird::where('status', 'active')->sum('quantity') ?? 0,
+                'huevos_buenos_hoy' => $this->obtenerHuevosBuenosHoyConFiltros($filtros),
+                'huevos_rotos_hoy' => $queryHoy->sum('huevos_rotos') ?? 0,
+                'huevos_sucios_hoy' => $queryHoy->sum('huevos_sucios') ?? 0,
+                'valor_total_hoy' => $queryHoy->sum('valor_total') ?? 0,
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo estadísticas con filtros: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Aplica filtros de fecha a la consulta
+     */
+    private function aplicarFiltrosFecha($query, $filtros)
+    {
+        switch ($filtros['tipo_periodo']) {
+            case 'hoy':
+                $query->whereDate('fecha', now()->toDateString());
+                break;
+            case 'semanal':
+                $query->whereBetween('fecha', [now()->startOfWeek(), now()->endOfWeek()]);
+                break;
+            case 'mensual':
+                $query->whereBetween('fecha', [now()->startOfMonth(), now()->endOfMonth()]);
+                break;
+            case 'anual':
+                $query->whereBetween('fecha', [now()->startOfYear(), now()->endOfYear()]);
+                break;
+            case 'personalizado':
+                if (!empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+                    $query->whereBetween('fecha', [$filtros['fecha_inicio'], $filtros['fecha_fin']]);
+                }
+                break;
+            case 'todo':
+            default:
+                // No aplicar filtro de fecha
+                break;
+        }
+    }
+
+    /**
+     * Aplica ordenamiento a la consulta
+     */
+    private function aplicarOrdenamiento($query, $ordenamiento)
+    {
+        switch ($ordenamiento) {
+            case 'fecha_asc':
+                $query->orderBy('fecha', 'asc');
+                break;
+            case 'cantidad_desc':
+                $query->orderBy('cantidad', 'desc');
+                break;
+            case 'cantidad_asc':
+                $query->orderBy('cantidad', 'asc');
+                break;
+            case 'galpon_asc':
+                $query->join('avicontrol_poultry_facilities', 'avicontrol_productions.galpon_id', '=', 'avicontrol_poultry_facilities.id')
+                      ->orderBy('avicontrol_poultry_facilities.name', 'asc');
+                break;
+            case 'fecha_desc':
+            default:
+                $query->orderBy('fecha', 'desc');
+                break;
+        }
+    }
+
+    /**
+     * Genera nombre de archivo basado en filtros
+     */
+    private function generarNombreArchivoConFiltros($filtros)
+    {
+        $nombre = now()->format('Y-m-d_H-i-s');
+        
+        if (!empty($filtros['tipo_periodo']) && $filtros['tipo_periodo'] !== 'todo') {
+            $nombre .= '_' . $filtros['tipo_periodo'];
+        }
+        
+        if (!empty($filtros['tipo_produccion'])) {
+            $nombre .= '_' . $filtros['tipo_produccion'];
+        }
+        
+        if (!empty($filtros['galpon_id'])) {
+            $nombre .= '_galpon' . $filtros['galpon_id'];
+        }
+        
+        if ($filtros['tipo_periodo'] === 'personalizado' && !empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+            $nombre .= '_' . $filtros['fecha_inicio'] . '_a_' . $filtros['fecha_fin'];
+        }
+        
+        return $nombre;
+    }
+
+    /**
+     * Calcula promedio diario con filtros
+     */
+    private function calcularPromedioDiarioProduccionConFiltros($filtros)
+    {
+        try {
+            $query = Production::query();
+            $this->aplicarFiltrosFecha($query, $filtros);
+            
+            if (!empty($filtros['tipo_produccion'])) {
+                $query->where('tipo_produccion', $filtros['tipo_produccion']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('galpon_id', $filtros['galpon_id']);
+            }
+            
+            $totalProduccion = $query->sum('cantidad') ?? 0;
+            $diasUnicos = $query->distinct('fecha')->count('fecha');
+            
+            return $diasUnicos > 0 ? round($totalProduccion / $diasUnicos, 2) : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Obtiene mejor galpón con filtros
+     */
+    private function obtenerMejorGalponProduccionConFiltros($filtros)
+    {
+        try {
+            $query = Production::with('galpon');
+            $this->aplicarFiltrosFecha($query, $filtros);
+            
+            if (!empty($filtros['tipo_produccion'])) {
+                $query->where('tipo_produccion', $filtros['tipo_produccion']);
+            }
+            
+            $mejorGalpon = $query->selectRaw('galpon_id, SUM(cantidad) as total_produccion')
+                                ->groupBy('galpon_id')
+                                ->orderByDesc('total_produccion')
+                                ->first();
+            
+            return $mejorGalpon && $mejorGalpon->galpon ? $mejorGalpon->galpon->name : 'N/A';
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
+    }
+
+    /**
+     * Obtiene huevos buenos hoy con filtros
+     */
+    private function obtenerHuevosBuenosHoyConFiltros($filtros)
+    {
+        try {
+            $query = Production::whereDate('fecha', now()->toDateString());
+            
+            if (!empty($filtros['tipo_produccion'])) {
+                $query->where('tipo_produccion', $filtros['tipo_produccion']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('galpon_id', $filtros['galpon_id']);
+            }
+            
+            $producciones = $query->get();
+            $totalBuenos = 0;
+            
+            foreach ($producciones as $produccion) {
+                $totalBuenos += ($produccion->cantidad ?? 0) - ($produccion->huevos_rotos ?? 0) - ($produccion->huevos_sucios ?? 0);
+            }
+            
+            return $totalBuenos;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    // Métodos auxiliares para Alimentos
+    
+    /**
+     * Procesa los filtros del request para alimentos
+     */
+    private function procesarFiltrosAlimentosRequest($request)
+    {
+        return [
+            'tipo_periodo' => $request->get('tipo_periodo', 'todo'),
+            'producto_id' => $request->get('producto_id'),
+            'galpon_id' => $request->get('galpon_id'),
+            'ordenamiento' => $request->get('ordenamiento', 'fecha_desc'),
+            'fecha_inicio' => $request->get('fecha_inicio'),
+            'fecha_fin' => $request->get('fecha_fin')
+        ];
+    }
+
+    /**
+     * Obtiene datos de alimentos aplicando filtros
+     */
+    private function obtenerDatosAlimentosConFiltros($filtros)
+    {
+        try {
+            \Log::info('Obteniendo datos de alimentos con filtros: ' . json_encode($filtros));
+            
+            $query = \DB::table('avicontrol_food_consumption as fc')
+                ->leftJoin('avicontrol_poultry_facilities as pf', 'fc.galpon_id', '=', 'pf.id')
+                ->leftJoin('avicontrol_inventory_products as ip', 'fc.producto_id', '=', 'ip.id')
+                ->select([
+                    'fc.*',
+                    'pf.name as galpon_nombre',
+                    'ip.name as producto_nombre',
+                    'ip.unit_price as precio_por_kg'
+                ]);
+            
+            // Aplicar filtros de fecha
+            $this->aplicarFiltrosFechaAlimentos($query, $filtros);
+            
+            // Filtro por producto
+            if (!empty($filtros['producto_id'])) {
+                $query->where('fc.producto_id', $filtros['producto_id']);
+            }
+            
+            // Filtro por galpón
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('fc.galpon_id', $filtros['galpon_id']);
+            }
+            
+            // Aplicar ordenamiento
+            $this->aplicarOrdenamientoAlimentos($query, $filtros['ordenamiento']);
+            
+            // Limitar resultados para evitar sobrecarga
+            $query->limit(1000);
+            
+            $alimentos = $query->get();
+            
+            \Log::info('Registros de alimentos encontrados con filtros: ' . $alimentos->count());
+            
+            return $alimentos->map(function($alimento) {
+                return [
+                    'fecha_registro' => $alimento->fecha_registro,
+                    'galpon_nombre' => $alimento->galpon_nombre ?? 'N/A',
+                    'galpon_id' => $alimento->galpon_id,
+                    'producto_nombre' => $alimento->producto_nombre ?? 'N/A',
+                    'producto_id' => $alimento->producto_id,
+                    'cantidad_kg' => $alimento->cantidad_kg ?? 0,
+                    'cantidad_bultos' => $alimento->cantidad_bultos ?? 0,
+                    'peso_por_bulto' => $alimento->peso_por_bulto ?? 0,
+                    'numero_aves' => $alimento->numero_aves ?? 0,
+                    'precio_por_kg' => $alimento->precio_por_kg ?? 0,
+                    'responsable' => $alimento->responsable ?? 'N/A',
+                    'estado' => $alimento->estado ?? 'activo',
+                    'observaciones' => $alimento->observaciones ?? 'Sin observaciones'
+                ];
+            });
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo datos de alimentos con filtros: ' . $e->getMessage());
+            return collect([]);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de alimentos con filtros
+     */
+    private function obtenerEstadisticasAlimentosConFiltros($filtros)
+    {
+        try {
+            $query = \DB::table('avicontrol_food_consumption as fc')
+                ->leftJoin('avicontrol_inventory_products as ip', 'fc.producto_id', '=', 'ip.id');
+                
+            $this->aplicarFiltrosFechaAlimentos($query, $filtros);
+            
+            if (!empty($filtros['producto_id'])) {
+                $query->where('fc.producto_id', $filtros['producto_id']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('fc.galpon_id', $filtros['galpon_id']);
+            }
+            
+            $registros = $query->get();
+            
+            $totalGasto = $registros->sum(function($r) {
+                return ($r->cantidad_kg ?? 0) * ($r->unit_price ?? 0);
+            });
+            
+            $totalKilos = $registros->sum('cantidad_kg');
+            $totalAves = $registros->sum('numero_aves');
+            $galponesUnicos = $registros->pluck('galpon_id')->unique()->count();
+            
+            return [
+                'total_gasto' => $totalGasto,
+                'promedio_galpon' => $galponesUnicos > 0 ? $totalGasto / $galponesUnicos : 0,
+                'total_kilos' => $totalKilos,
+                'promedio_diario' => $this->calcularPromedioDiarioAlimentosConFiltros($filtros),
+                'mejor_galpon' => $this->obtenerMejorGalponAlimentosConFiltros($filtros),
+                'producto_mas_consumido' => $this->obtenerProductoMasConsumidoConFiltros($filtros),
+                'total_aves' => $totalAves,
+                'eficiencia_consumo' => $totalAves > 0 ? ($totalKilos * 1000) / $totalAves : 0,
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo estadísticas de alimentos con filtros: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Aplica filtros de fecha a la consulta de alimentos
+     */
+    private function aplicarFiltrosFechaAlimentos($query, $filtros)
+    {
+        switch ($filtros['tipo_periodo']) {
+            case 'hoy':
+                $query->whereDate('fc.fecha_registro', now()->toDateString());
+                break;
+            case 'semanal':
+                $query->whereBetween('fc.fecha_registro', [now()->startOfWeek(), now()->endOfWeek()]);
+                break;
+            case 'mensual':
+                $query->whereBetween('fc.fecha_registro', [now()->startOfMonth(), now()->endOfMonth()]);
+                break;
+            case 'anual':
+                $query->whereBetween('fc.fecha_registro', [now()->startOfYear(), now()->endOfYear()]);
+                break;
+            case 'personalizado':
+                if (!empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+                    $query->whereBetween('fc.fecha_registro', [$filtros['fecha_inicio'], $filtros['fecha_fin']]);
+                }
+                break;
+            case 'todo':
+            default:
+                // No aplicar filtro de fecha
+                break;
+        }
+    }
+
+    /**
+     * Aplica ordenamiento a la consulta de alimentos
+     */
+    private function aplicarOrdenamientoAlimentos($query, $ordenamiento)
+    {
+        switch ($ordenamiento) {
+            case 'fecha_asc':
+                $query->orderBy('fc.fecha_registro', 'asc');
+                break;
+            case 'cantidad_desc':
+                $query->orderBy('fc.cantidad_kg', 'desc');
+                break;
+            case 'cantidad_asc':
+                $query->orderBy('fc.cantidad_kg', 'asc');
+                break;
+            case 'galpon_asc':
+                $query->orderBy('pf.name', 'asc');
+                break;
+            case 'producto_asc':
+                $query->orderBy('ip.name', 'asc');
+                break;
+            case 'fecha_desc':
+            default:
+                $query->orderBy('fc.fecha_registro', 'desc');
+                break;
+        }
+    }
+
+    /**
+     * Genera nombre de archivo basado en filtros de alimentos
+     */
+    private function generarNombreArchivoAlimentosConFiltros($filtros)
+    {
+        $nombre = now()->format('Y-m-d_H-i-s');
+        
+        if (!empty($filtros['tipo_periodo']) && $filtros['tipo_periodo'] !== 'todo') {
+            $nombre .= '_' . $filtros['tipo_periodo'];
+        }
+        
+        if (!empty($filtros['producto_id'])) {
+            $nombre .= '_producto' . $filtros['producto_id'];
+        }
+        
+        if (!empty($filtros['galpon_id'])) {
+            $nombre .= '_galpon' . $filtros['galpon_id'];
+        }
+        
+        if ($filtros['tipo_periodo'] === 'personalizado' && !empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+            $nombre .= '_' . $filtros['fecha_inicio'] . '_a_' . $filtros['fecha_fin'];
+        }
+        
+        return $nombre;
+    }
+
+    /**
+     * Calcula promedio diario de alimentos con filtros
+     */
+    private function calcularPromedioDiarioAlimentosConFiltros($filtros)
+    {
+        try {
+            $query = \DB::table('avicontrol_food_consumption');
+            $this->aplicarFiltrosFechaAlimentos($query, $filtros);
+            
+            if (!empty($filtros['producto_id'])) {
+                $query->where('producto_id', $filtros['producto_id']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('galpon_id', $filtros['galpon_id']);
+            }
+            
+            $totalConsumo = $query->sum('cantidad_kg') ?? 0;
+            $diasUnicos = $query->distinct('fecha_registro')->count('fecha_registro');
+            
+            return $diasUnicos > 0 ? round($totalConsumo / $diasUnicos, 2) : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Obtiene mejor galpón de alimentos con filtros
+     */
+    private function obtenerMejorGalponAlimentosConFiltros($filtros)
+    {
+        try {
+            $query = \DB::table('avicontrol_food_consumption as fc')
+                ->leftJoin('avicontrol_poultry_facilities as pf', 'fc.galpon_id', '=', 'pf.id');
+            $this->aplicarFiltrosFechaAlimentos($query, $filtros);
+            
+            if (!empty($filtros['producto_id'])) {
+                $query->where('fc.producto_id', $filtros['producto_id']);
+            }
+            
+            $mejorGalpon = $query->selectRaw('fc.galpon_id, pf.name, SUM(fc.cantidad_kg) as total_consumo')
+                                ->groupBy('fc.galpon_id', 'pf.name')
+                                ->orderByDesc('total_consumo')
+                                ->first();
+            
+            return $mejorGalpon ? $mejorGalpon->name : 'N/A';
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
+    }
+
+    /**
+     * Obtiene producto más consumido con filtros
+     */
+    private function obtenerProductoMasConsumidoConFiltros($filtros)
+    {
+        try {
+            $query = \DB::table('avicontrol_food_consumption as fc')
+                ->leftJoin('avicontrol_inventory_products as ip', 'fc.producto_id', '=', 'ip.id');
+            $this->aplicarFiltrosFechaAlimentos($query, $filtros);
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('fc.galpon_id', $filtros['galpon_id']);
+            }
+            
+            $productoMasConsumido = $query->selectRaw('fc.producto_id, ip.name, SUM(fc.cantidad_kg) as total_consumo')
+                                         ->groupBy('fc.producto_id', 'ip.name')
+                                         ->orderByDesc('total_consumo')
+                                         ->first();
+            
+            return $productoMasConsumido ? $productoMasConsumido->name : 'N/A';
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
+    }
+
+    // Métodos auxiliares para Seguimientos
+    
+    /**
+     * Procesa los filtros del request para seguimientos
+     */
+    private function procesarFiltrosSeguimientosRequest($request)
+    {
+        return [
+            'tipo_periodo' => $request->get('tipo_periodo', 'todo'),
+            'estado' => $request->get('estado'),
+            'galpon_id' => $request->get('galpon_id'),
+            'ordenamiento' => $request->get('ordenamiento', 'fecha_desc'),
+            'fecha_inicio' => $request->get('fecha_inicio'),
+            'fecha_fin' => $request->get('fecha_fin'),
+            'peso_minimo' => $request->get('peso_minimo'),
+            'peso_maximo' => $request->get('peso_maximo')
+        ];
+    }
+
+    /**
+     * Obtiene datos de seguimientos aplicando filtros
+     */
+    private function obtenerDatosSeguimientosConFiltros($filtros)
+    {
+        try {
+            \Log::info('Obteniendo datos de seguimientos con filtros: ' . json_encode($filtros));
+            
+            $query = \DB::table('avicontrol_birds as b')
+                ->leftJoin('avicontrol_poultry_facilities as pf', 'b.poultry_facility_id', '=', 'pf.id')
+                ->select([
+                    'b.*',
+                    'pf.name as galpon_nombre'
+                ]);
+            
+            // Aplicar filtros de fecha
+            $this->aplicarFiltrosFechaSeguimientos($query, $filtros);
+            
+            // Filtro por estado
+            if (!empty($filtros['estado'])) {
+                $query->where('b.status', $filtros['estado']);
+            }
+            
+            // Filtro por galpón
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('b.poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            // Filtros de peso
+            if (!empty($filtros['peso_minimo'])) {
+                $query->where('b.weight', '>=', $filtros['peso_minimo']);
+            }
+            
+            if (!empty($filtros['peso_maximo'])) {
+                $query->where('b.weight', '<=', $filtros['peso_maximo']);
+            }
+            
+            // Aplicar ordenamiento
+            $this->aplicarOrdenamientoSeguimientos($query, $filtros['ordenamiento']);
+            
+            // Limitar resultados para evitar sobrecarga
+            $query->limit(1000);
+            
+            $seguimientos = $query->get();
+            
+            \Log::info('Registros de seguimientos encontrados con filtros: ' . $seguimientos->count());
+            
+            return $seguimientos->map(function($seguimiento) {
+                return [
+                    'created_at' => $seguimiento->created_at,
+                    'galpon_nombre' => $seguimiento->galpon_nombre ?? 'N/A',
+                    'poultry_facility_id' => $seguimiento->poultry_facility_id,
+                    'breed' => $seguimiento->breed ?? 'N/A',
+                    'quantity' => $seguimiento->quantity ?? 0,
+                    'initial_quantity' => $seguimiento->initial_quantity ?? 0,
+                    'weight' => $seguimiento->weight ?? 0,
+                    'birth_date' => $seguimiento->birth_date,
+                    'status' => $seguimiento->status ?? 'active',
+                    'feed_conversion' => $seguimiento->feed_conversion ?? 0,
+                    'cost_per_bird' => $seguimiento->cost_per_bird ?? 0,
+                    'observations' => $seguimiento->observations ?? 'Sin observaciones',
+                    'responsible' => $seguimiento->responsible ?? 'N/A'
+                ];
+            });
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo datos de seguimientos con filtros: ' . $e->getMessage());
+            return collect([]);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de seguimientos con filtros
+     */
+    private function obtenerEstadisticasSeguimientosConFiltros($filtros)
+    {
+        try {
+            $query = \DB::table('avicontrol_birds');
+                
+            $this->aplicarFiltrosFechaSeguimientos($query, $filtros);
+            
+            if (!empty($filtros['estado'])) {
+                $query->where('status', $filtros['estado']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            if (!empty($filtros['peso_minimo'])) {
+                $query->where('weight', '>=', $filtros['peso_minimo']);
+            }
+            
+            if (!empty($filtros['peso_maximo'])) {
+                $query->where('weight', '<=', $filtros['peso_maximo']);
+            }
+            
+            $registros = $query->get();
+            
+            $totalAves = $registros->sum('quantity');
+            $pesoPromedio = $registros->avg('weight');
+            $conversionPromedio = $registros->avg('feed_conversion');
+            
+            // Calcular edad promedio
+            $edadPromedio = 0;
+            $count = 0;
+            foreach($registros as $r) {
+                if ($r->birth_date && $r->created_at) {
+                    $fechaNacimiento = \Carbon\Carbon::parse($r->birth_date);
+                    $fechaRegistro = \Carbon\Carbon::parse($r->created_at);
+                    $edadPromedio += $fechaNacimiento->diffInDays($fechaRegistro);
+                    $count++;
+                }
+            }
+            $edadPromedio = $count > 0 ? $edadPromedio / $count : 0;
+            
+            // Calcular tasa de mortalidad
+            $tasaMortalidad = 0;
+            $totalInicial = $registros->sum('initial_quantity');
+            if ($totalInicial > 0) {
+                $muertos = $totalInicial - $totalAves;
+                $tasaMortalidad = ($muertos / $totalInicial) * 100;
+            }
+            
+            return [
+                'total_aves_seguimiento' => $totalAves,
+                'promedio_peso' => $pesoPromedio,
+                'edad_promedio' => $edadPromedio,
+                'tasa_crecimiento' => $this->calcularTasaCrecimientoConFiltros($filtros),
+                'mejor_galpon' => $this->obtenerMejorGalponSeguimientosConFiltros($filtros),
+                'conversion_promedio' => $conversionPromedio,
+                'tasa_mortalidad' => $tasaMortalidad,
+                'eficiencia_productiva' => $this->calcularEficienciaProductivaConFiltros($filtros),
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo estadísticas de seguimientos con filtros: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Aplica filtros de fecha a la consulta de seguimientos
+     */
+    private function aplicarFiltrosFechaSeguimientos($query, $filtros)
+    {
+        switch ($filtros['tipo_periodo']) {
+            case 'hoy':
+                $query->whereDate('b.created_at', now()->toDateString());
+                break;
+            case 'semanal':
+                $query->whereBetween('b.created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                break;
+            case 'mensual':
+                $query->whereBetween('b.created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+                break;
+            case 'anual':
+                $query->whereBetween('b.created_at', [now()->startOfYear(), now()->endOfYear()]);
+                break;
+            case 'personalizado':
+                if (!empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+                    $query->whereBetween('b.created_at', [$filtros['fecha_inicio'], $filtros['fecha_fin']]);
+                }
+                break;
+            case 'todo':
+            default:
+                // No aplicar filtro de fecha
+                break;
+        }
+    }
+
+    /**
+     * Aplica ordenamiento a la consulta de seguimientos
+     */
+    private function aplicarOrdenamientoSeguimientos($query, $ordenamiento)
+    {
+        switch ($ordenamiento) {
+            case 'fecha_asc':
+                $query->orderBy('b.created_at', 'asc');
+                break;
+            case 'peso_desc':
+                $query->orderBy('b.weight', 'desc');
+                break;
+            case 'peso_asc':
+                $query->orderBy('b.weight', 'asc');
+                break;
+            case 'edad_desc':
+                $query->orderBy('b.birth_date', 'asc'); // Más viejo = fecha nacimiento anterior
+                break;
+            case 'edad_asc':
+                $query->orderBy('b.birth_date', 'desc'); // Más joven = fecha nacimiento posterior
+                break;
+            case 'galpon_asc':
+                $query->orderBy('pf.name', 'asc');
+                break;
+            case 'fecha_desc':
+            default:
+                $query->orderBy('b.created_at', 'desc');
+                break;
+        }
+    }
+
+    /**
+     * Genera nombre de archivo basado en filtros de seguimientos
+     */
+    private function generarNombreArchivoSeguimientosConFiltros($filtros)
+    {
+        $nombre = now()->format('Y-m-d_H-i-s');
+        
+        if (!empty($filtros['tipo_periodo']) && $filtros['tipo_periodo'] !== 'todo') {
+            $nombre .= '_' . $filtros['tipo_periodo'];
+        }
+        
+        if (!empty($filtros['estado'])) {
+            $nombre .= '_' . $filtros['estado'];
+        }
+        
+        if (!empty($filtros['galpon_id'])) {
+            $nombre .= '_galpon' . $filtros['galpon_id'];
+        }
+        
+        if (!empty($filtros['peso_minimo']) || !empty($filtros['peso_maximo'])) {
+            $nombre .= '_peso';
+            if (!empty($filtros['peso_minimo'])) {
+                $nombre .= '_min' . $filtros['peso_minimo'];
+            }
+            if (!empty($filtros['peso_maximo'])) {
+                $nombre .= '_max' . $filtros['peso_maximo'];
+            }
+        }
+        
+        if ($filtros['tipo_periodo'] === 'personalizado' && !empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+            $nombre .= '_' . $filtros['fecha_inicio'] . '_a_' . $filtros['fecha_fin'];
+        }
+        
+        return $nombre;
+    }
+
+    /**
+     * Calcula tasa de crecimiento con filtros
+     */
+    private function calcularTasaCrecimientoConFiltros($filtros)
+    {
+        try {
+            // Implementar cálculo de tasa de crecimiento basado en peso y edad
+            $query = \DB::table('avicontrol_birds');
+            $this->aplicarFiltrosFechaSeguimientos($query, $filtros);
+            
+            if (!empty($filtros['estado'])) {
+                $query->where('status', $filtros['estado']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            $registros = $query->get();
+            
+            // Calcular tasa de crecimiento promedio (simplificado)
+            $crecimientoTotal = 0;
+            $count = 0;
+            
+            foreach($registros as $r) {
+                if ($r->birth_date && $r->created_at && $r->weight > 0) {
+                    $fechaNacimiento = \Carbon\Carbon::parse($r->birth_date);
+                    $fechaRegistro = \Carbon\Carbon::parse($r->created_at);
+                    $dias = $fechaNacimiento->diffInDays($fechaRegistro);
+                    
+                    if ($dias > 0) {
+                        $crecimientoDiario = $r->weight / $dias;
+                        $crecimientoTotal += $crecimientoDiario;
+                        $count++;
+                    }
+                }
+            }
+            
+            return $count > 0 ? ($crecimientoTotal / $count) * 100 : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Obtiene mejor galpón de seguimientos con filtros
+     */
+    private function obtenerMejorGalponSeguimientosConFiltros($filtros)
+    {
+        try {
+            $query = \DB::table('avicontrol_birds as b')
+                ->leftJoin('avicontrol_poultry_facilities as pf', 'b.poultry_facility_id', '=', 'pf.id');
+            $this->aplicarFiltrosFechaSeguimientos($query, $filtros);
+            
+            if (!empty($filtros['estado'])) {
+                $query->where('b.status', $filtros['estado']);
+            }
+            
+            $mejorGalpon = $query->selectRaw('b.poultry_facility_id, pf.name, AVG(b.weight) as peso_promedio')
+                                ->groupBy('b.poultry_facility_id', 'pf.name')
+                                ->orderByDesc('peso_promedio')
+                                ->first();
+            
+            return $mejorGalpon ? $mejorGalpon->name : 'N/A';
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
+    }
+
+    /**
+     * Calcula eficiencia productiva con filtros
+     */
+    private function calcularEficienciaProductivaConFiltros($filtros)
+    {
+        try {
+            $query = \DB::table('avicontrol_birds');
+            $this->aplicarFiltrosFechaSeguimientos($query, $filtros);
+            
+            if (!empty($filtros['estado'])) {
+                $query->where('status', $filtros['estado']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            $registros = $query->get();
+            
+            $totalAves = $registros->sum('quantity');
+            $totalInicial = $registros->sum('initial_quantity');
+            
+            return $totalInicial > 0 ? ($totalAves / $totalInicial) * 100 : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    // Métodos auxiliares para Costos de Producción
+    
+    /**
+     * Procesa los filtros del request para costos
+     */
+    private function procesarFiltrosCostosRequest($request)
+    {
+        return [
+            'tipo_periodo' => $request->get('tipo_periodo', 'todo'),
+            'cost_type' => $request->get('cost_type'),
+            'galpon_id' => $request->get('galpon_id'),
+            'ordenamiento' => $request->get('ordenamiento', 'fecha_desc'),
+            'fecha_inicio' => $request->get('fecha_inicio'),
+            'fecha_fin' => $request->get('fecha_fin'),
+            'costo_minimo' => $request->get('costo_minimo'),
+            'costo_maximo' => $request->get('costo_maximo')
+        ];
+    }
+
+    /**
+     * Obtiene datos de costos aplicando filtros
+     */
+    private function obtenerDatosCostosConFiltros($filtros)
+    {
+        try {
+            \Log::info('Obteniendo datos de costos con filtros: ' . json_encode($filtros));
+            
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                \Log::warning('La tabla avicontrol_production_costs no existe');
+                return collect([]);
+            }
+            
+            $query = \DB::table('avicontrol_production_costs as pc')
+                ->leftJoin('avicontrol_poultry_facilities as pf', 'pc.poultry_facility_id', '=', 'pf.id')
+                ->select([
+                    'pc.*',
+                    'pf.name as facility_name'
+                ]);
+            
+            // Aplicar filtros de fecha
+            $this->aplicarFiltrosFechaCostos($query, $filtros);
+            
+            // Filtro por tipo de costo
+            if (!empty($filtros['cost_type'])) {
+                $query->where('pc.cost_type', $filtros['cost_type']);
+            }
+            
+            // Filtro por galpón
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('pc.poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            // Filtros de costo
+            if (!empty($filtros['costo_minimo'])) {
+                $query->where('pc.total_cost', '>=', $filtros['costo_minimo']);
+            }
+            
+            if (!empty($filtros['costo_maximo'])) {
+                $query->where('pc.total_cost', '<=', $filtros['costo_maximo']);
+            }
+            
+            // Aplicar ordenamiento
+            $this->aplicarOrdenamientoCostos($query, $filtros['ordenamiento']);
+            
+            // Limitar resultados para evitar sobrecarga
+            $query->limit(1000);
+            
+            $costos = $query->get();
+            
+            \Log::info('Registros de costos encontrados con filtros: ' . $costos->count());
+            
+            return $costos->map(function($costo) {
+                return [
+                    'id' => $costo->id,
+                    'created_at' => $costo->created_at,
+                    'facility_name' => $costo->facility_name ?? 'N/A',
+                    'poultry_facility_id' => $costo->poultry_facility_id,
+                    'batch_code' => $costo->batch_code ?? 'N/A',
+                    'period_start' => $costo->period_start,
+                    'period_end' => $costo->period_end,
+                    'cost_type' => $costo->cost_type ?? 'batch',
+                    'cost_category' => $costo->cost_category ?? 'General',
+                    'description' => $costo->description ?? 'Sin descripción',
+                    'total_cost' => $costo->total_cost ?? 0,
+                    'cost_per_unit' => $costo->cost_per_unit ?? 0,
+                    'unit_type' => $costo->unit_type ?? 'unidad',
+                    'unit_type_name' => $costo->unit_type_name ?? 'unidad',
+                    'quantity' => $costo->quantity ?? 0,
+                    'status' => $costo->status ?? 'active',
+                    'responsible' => $costo->responsible ?? 'N/A',
+                    'notes' => $costo->notes ?? 'Sin observaciones',
+                    'observations' => $costo->observations ?? 'Sin observaciones'
+                ];
+            });
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo datos de costos con filtros: ' . $e->getMessage());
+            return collect([]);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de costos con filtros
+     */
+    private function obtenerEstadisticasCostosConFiltros($filtros)
+    {
+        try {
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                return [];
+            }
+            
+            $query = \DB::table('avicontrol_production_costs');
+                
+            $this->aplicarFiltrosFechaCostos($query, $filtros);
+            
+            if (!empty($filtros['cost_type'])) {
+                $query->where('cost_type', $filtros['cost_type']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            if (!empty($filtros['costo_minimo'])) {
+                $query->where('total_cost', '>=', $filtros['costo_minimo']);
+            }
+            
+            if (!empty($filtros['costo_maximo'])) {
+                $query->where('total_cost', '<=', $filtros['costo_maximo']);
+            }
+            
+            $registros = $query->get();
+            
+            $totalCostos = $registros->sum('total_cost');
+            $totalRegistros = $registros->count();
+            $costoPromedio = $totalRegistros > 0 ? $totalCostos / $totalRegistros : 0;
+            $costoMasAlto = $registros->max('total_cost') ?? 0;
+            $costoMasBajo = $registros->min('total_cost') ?? 0;
+            
+            return [
+                'total_costos' => $totalCostos,
+                'costo_promedio' => $costoPromedio,
+                'costo_mas_alto' => $costoMasAlto,
+                'costo_mas_bajo' => $costoMasBajo,
+                'total_registros' => $totalRegistros,
+                'galpon_mayor_costo' => $this->obtenerGalponMayorCostoConFiltros($filtros),
+                'tipo_mas_comun' => $this->obtenerTipoMasComunConFiltros($filtros),
+                'eficiencia_costos' => $this->calcularEficienciaCostosConFiltros($filtros),
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo estadísticas de costos con filtros: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Aplica filtros de fecha a la consulta de costos
+     */
+    private function aplicarFiltrosFechaCostos($query, $filtros)
+    {
+        switch ($filtros['tipo_periodo']) {
+            case 'hoy':
+                $query->whereDate('created_at', now()->toDateString());
+                break;
+            case 'semanal':
+                $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                break;
+            case 'mensual':
+                $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+                break;
+            case 'anual':
+                $query->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()]);
+                break;
+            case 'personalizado':
+                if (!empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+                    $query->whereBetween('created_at', [$filtros['fecha_inicio'], $filtros['fecha_fin']]);
+                }
+                break;
+            case 'todo':
+            default:
+                // No aplicar filtro de fecha
+                break;
+        }
+    }
+
+    /**
+     * Aplica ordenamiento a la consulta de costos
+     */
+    private function aplicarOrdenamientoCostos($query, $ordenamiento)
+    {
+        switch ($ordenamiento) {
+            case 'fecha_asc':
+                $query->orderBy('pc.created_at', 'asc');
+                break;
+            case 'costo_desc':
+                $query->orderBy('pc.total_cost', 'desc');
+                break;
+            case 'costo_asc':
+                $query->orderBy('pc.total_cost', 'asc');
+                break;
+            case 'costo_unidad_desc':
+                $query->orderBy('pc.cost_per_unit', 'desc');
+                break;
+            case 'costo_unidad_asc':
+                $query->orderBy('pc.cost_per_unit', 'asc');
+                break;
+            case 'galpon_asc':
+                $query->orderBy('pf.name', 'asc');
+                break;
+            case 'tipo_asc':
+                $query->orderBy('pc.cost_type', 'asc');
+                break;
+            case 'fecha_desc':
+            default:
+                $query->orderBy('pc.created_at', 'desc');
+                break;
+        }
+    }
+
+    /**
+     * Genera nombre de archivo basado en filtros de costos
+     */
+    private function generarNombreArchivoCostosConFiltros($filtros)
+    {
+        $nombre = now()->format('Y-m-d_H-i-s');
+        
+        if (!empty($filtros['tipo_periodo']) && $filtros['tipo_periodo'] !== 'todo') {
+            $nombre .= '_' . $filtros['tipo_periodo'];
+        }
+        
+        if (!empty($filtros['cost_type'])) {
+            $nombre .= '_' . $filtros['cost_type'];
+        }
+        
+        if (!empty($filtros['galpon_id'])) {
+            $nombre .= '_galpon' . $filtros['galpon_id'];
+        }
+        
+        if (!empty($filtros['costo_minimo']) || !empty($filtros['costo_maximo'])) {
+            $nombre .= '_costo';
+            if (!empty($filtros['costo_minimo'])) {
+                $nombre .= '_min' . $filtros['costo_minimo'];
+            }
+            if (!empty($filtros['costo_maximo'])) {
+                $nombre .= '_max' . $filtros['costo_maximo'];
+            }
+        }
+        
+        if ($filtros['tipo_periodo'] === 'personalizado' && !empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+            $nombre .= '_' . $filtros['fecha_inicio'] . '_a_' . $filtros['fecha_fin'];
+        }
+        
+        return $nombre;
+    }
+
+    /**
+     * Obtiene galpón con mayor costo con filtros
+     */
+    private function obtenerGalponMayorCostoConFiltros($filtros)
+    {
+        try {
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                return 'N/A';
+            }
+            
+            $query = \DB::table('avicontrol_production_costs as pc')
+                ->leftJoin('avicontrol_poultry_facilities as pf', 'pc.poultry_facility_id', '=', 'pf.id');
+            $this->aplicarFiltrosFechaCostos($query, $filtros);
+            
+            if (!empty($filtros['cost_type'])) {
+                $query->where('pc.cost_type', $filtros['cost_type']);
+            }
+            
+            $mejorGalpon = $query->selectRaw('pc.poultry_facility_id, pf.name, SUM(pc.total_cost) as total_costo')
+                                ->groupBy('pc.poultry_facility_id', 'pf.name')
+                                ->orderByDesc('total_costo')
+                                ->first();
+            
+            return $mejorGalpon ? $mejorGalpon->name : 'N/A';
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
+    }
+
+    /**
+     * Obtiene tipo de costo más común con filtros
+     */
+    private function obtenerTipoMasComunConFiltros($filtros)
+    {
+        try {
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                return 'N/A';
+            }
+            
+            $query = \DB::table('avicontrol_production_costs');
+            $this->aplicarFiltrosFechaCostos($query, $filtros);
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            $tipoMasComun = $query->selectRaw('cost_type, COUNT(*) as total')
+                                 ->groupBy('cost_type')
+                                 ->orderByDesc('total')
+                                 ->first();
+            
+            if ($tipoMasComun) {
+                $tipos = [
+                    'batch' => 'Por Lote',
+                    'monthly' => 'Mensual',
+                    'weekly' => 'Semanal',
+                    'daily' => 'Diario',
+                    'feed' => 'Alimentación',
+                    'medical' => 'Médico',
+                    'maintenance' => 'Mantenimiento'
+                ];
+                return $tipos[$tipoMasComun->cost_type] ?? ucfirst($tipoMasComun->cost_type);
+            }
+            
+            return 'N/A';
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
+    }
+
+    /**
+     * Calcula eficiencia de costos con filtros
+     */
+    private function calcularEficienciaCostosConFiltros($filtros)
+    {
+        try {
+            if (!\Schema::hasTable('avicontrol_production_costs')) {
+                return 0;
+            }
+            
+            $query = \DB::table('avicontrol_production_costs');
+            $this->aplicarFiltrosFechaCostos($query, $filtros);
+            
+            if (!empty($filtros['cost_type'])) {
+                $query->where('cost_type', $filtros['cost_type']);
+            }
+            
+            if (!empty($filtros['galpon_id'])) {
+                $query->where('poultry_facility_id', $filtros['galpon_id']);
+            }
+            
+            $registros = $query->get();
+            
+            $totalCostos = $registros->sum('total_cost');
+            $totalUnidades = $registros->sum('quantity');
+            
+            // Eficiencia simplificada: relación costo/unidad optimizada
+            return $totalUnidades > 0 ? (($totalUnidades / $totalCostos) * 100) : 0;
+        } catch (\Exception $e) {
+            return 0;
         }
     }
 }

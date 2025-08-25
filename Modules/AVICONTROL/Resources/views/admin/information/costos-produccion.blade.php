@@ -40,11 +40,15 @@
                             <i class="fas fa-arrow-left me-1"></i>
                             Volver
                         </a>
-                        <a href="{{ route('avicontrol.admin.information.costos_produccion.pdf') }}" class="btn btn-danger btn-sm me-2">
-                            <i class="fas fa-file-pdf me-1"></i>
-                            Descargar PDF
-                        </a>
-                        <span class="badge bg-info">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-success btn-sm" id="exportar-excel" data-bs-toggle="modal" data-bs-target="#modalFiltrosExportacion" data-formato="excel">
+                                <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm" id="exportar-pdf" data-bs-toggle="modal" data-bs-target="#modalFiltrosExportacion" data-formato="pdf">
+                                <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                            </button>
+                        </div>
+                        <span class="badge bg-info ms-2">
                             @if(isset($productionCosts) && count($productionCosts) > 0)
                                 Total: {{ $productionCosts instanceof \Illuminate\Pagination\LengthAwarePaginator ? $productionCosts->total() : count($productionCosts) }}
                             @else
@@ -142,6 +146,154 @@
                             {{ $productionCosts->links() }}
                         </div>
                     @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Filtros de Exportación -->
+    <div class="modal fade" id="modalFiltrosExportacion" tabindex="-1" aria-labelledby="modalFiltrosExportacionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalFiltrosExportacionLabel">
+                        <i class="fas fa-filter me-2"></i>Filtros de Exportación - Costos de Producción
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formFiltrosExportacion">
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Selecciona el período:</strong> Elige el rango de fechas para tu reporte de costos de producción.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipoPeriodo" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Tipo de Período
+                                </label>
+                                <select class="form-select" id="tipoPeriodo" name="tipo_periodo" required>
+                                    <option value="">Seleccionar período...</option>
+                                    <option value="todo">📊 Todos los datos</option>
+                                    <option value="hoy">📅 Solo hoy</option>
+                                    <option value="semanal">📅 Esta semana</option>
+                                    <option value="mensual">📅 Este mes</option>
+                                    <option value="anual">📅 Este año</option>
+                                    <option value="personalizado">🎯 Rango personalizado</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="tipoFiltro" class="form-label">
+                                    <i class="fas fa-tags me-1"></i>Tipo de Costo
+                                </label>
+                                <select class="form-select" id="tipoFiltro" name="cost_type">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="batch">📦 Por lote</option>
+                                    <option value="monthly">📅 Mensual</option>
+                                    <option value="weekly">📊 Semanal</option>
+                                    <option value="daily">🗓️ Diario</option>
+                                    <option value="feed">🌾 Alimentación</option>
+                                    <option value="medical">💊 Médico</option>
+                                    <option value="maintenance">🔧 Mantenimiento</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Campos de fecha personalizada (ocultos por defecto) -->
+                        <div class="row" id="camposFechaPersonalizada" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-plus me-1"></i>Fecha Inicio
+                                </label>
+                                <input type="date" class="form-control" id="fechaInicio" name="fecha_inicio">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaFin" class="form-label">
+                                    <i class="fas fa-calendar-minus me-1"></i>Fecha Fin
+                                </label>
+                                <input type="date" class="form-control" id="fechaFin" name="fecha_fin">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="galponFiltro" class="form-label">
+                                    <i class="fas fa-home me-1"></i>Galpón Específico
+                                </label>
+                                <select class="form-select" id="galponFiltro" name="galpon_id">
+                                    <option value="">Todos los galpones</option>
+                                    @if(isset($galpones))
+                                        @foreach($galpones as $galpon)
+                                            <option value="{{ $galpon->id }}">{{ $galpon->name ?? 'Galpón ' . $galpon->id }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="ordenamiento" class="form-label">
+                                    <i class="fas fa-sort me-1"></i>Ordenar por
+                                </label>
+                                <select class="form-select" id="ordenamiento" name="ordenamiento">
+                                    <option value="fecha_desc">Fecha (más reciente primero)</option>
+                                    <option value="fecha_asc">Fecha (más antiguo primero)</option>
+                                    <option value="costo_desc">Costo Total (mayor a menor)</option>
+                                    <option value="costo_asc">Costo Total (menor a mayor)</option>
+                                    <option value="costo_unidad_desc">Costo/Unidad (mayor a menor)</option>
+                                    <option value="costo_unidad_asc">Costo/Unidad (menor a mayor)</option>
+                                    <option value="galpon_asc">Galpón (A-Z)</option>
+                                    <option value="tipo_asc">Tipo de Costo (A-Z)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Filtros de rango de costo -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="costoMinimo" class="form-label">
+                                    <i class="fas fa-dollar-sign me-1"></i>Costo Mínimo ($)
+                                </label>
+                                <input type="number" class="form-control" id="costoMinimo" name="costo_minimo" placeholder="Ej: 100" step="0.01">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="costoMaximo" class="form-label">
+                                    <i class="fas fa-dollar-sign me-1"></i>Costo Máximo ($)
+                                </label>
+                                <input type="number" class="form-control" id="costoMaximo" name="costo_maximo" placeholder="Ej: 5000" step="0.01">
+                            </div>
+                        </div>
+
+                        <!-- Resumen de filtros -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-eye me-1"></i>Vista previa de filtros:
+                                        </h6>
+                                        <div id="resumenFiltros" class="text-muted">
+                                            Selecciona un período para ver el resumen...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="aplicarFiltrosYExportar">
+                        <i class="fas fa-download me-1"></i>Exportar con Filtros
+                    </button>
                 </div>
             </div>
         </div>
@@ -353,6 +505,8 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    console.log('=== AVICONTROL COSTOS DE PRODUCCIÓN - INICIANDO ===');
+    
     // Auto-ocultar alertas después de 4 segundos
     setTimeout(function(){ 
         $('.alert').fadeOut('slow'); 
@@ -385,7 +539,209 @@ $(document).ready(function() {
         }, 500);
     });
     
+    // Configurar event listeners para filtros
+    configurarEventListeners();
+    
     console.log('Vista de costos de producción cargada correctamente');
+    
+    // Funciones para el sistema de filtros
+    function configurarEventListeners() {
+        // Modal de filtros de exportación
+        let formatoSeleccionado = '';
+        
+        // Capturar el formato cuando se abre el modal
+        $('#exportar-excel, #exportar-pdf').on('click', function() {
+            formatoSeleccionado = $(this).data('formato');
+            $('#modalFiltrosExportacionLabel').html(`<i class="fas fa-filter me-2"></i>Filtros de Exportación - Costos - ${formatoSeleccionado.toUpperCase()}`);
+        });
+        
+        // Mostrar/ocultar campos de fecha personalizada
+        $('#tipoPeriodo').on('change', function() {
+            const valor = $(this).val();
+            if (valor === 'personalizado') {
+                $('#camposFechaPersonalizada').show();
+                $('#fechaInicio, #fechaFin').prop('required', true);
+            } else {
+                $('#camposFechaPersonalizada').hide();
+                $('#fechaInicio, #fechaFin').prop('required', false);
+            }
+            actualizarResumenFiltros();
+        });
+        
+        // Actualizar resumen cuando cambien los filtros
+        $('#tipoPeriodo, #tipoFiltro, #galponFiltro, #ordenamiento, #fechaInicio, #fechaFin, #costoMinimo, #costoMaximo').on('change input', function() {
+            actualizarResumenFiltros();
+        });
+        
+        // Aplicar filtros y exportar
+        $('#aplicarFiltrosYExportar').on('click', function() {
+            const filtros = obtenerFiltrosSeleccionados();
+            if (validarFiltros(filtros)) {
+                $('#modalFiltrosExportacion').modal('hide');
+                exportarDatosConFiltros(formatoSeleccionado, filtros);
+            }
+        });
+    }
+    
+    function exportarDatosConFiltros(formato, filtros) {
+        mostrarNotificacion(`Iniciando exportación a ${formato.toUpperCase()} con filtros...`, 'info');
+        
+        const btn = $(`#exportar-${formato}`);
+        const originalText = btn.html();
+        btn.html(`<i class="fas fa-spinner fa-spin me-2"></i>Exportando...`);
+        btn.prop('disabled', true);
+        
+        // Construir URL con parámetros de filtro
+        const baseUrl = formato === 'excel' 
+            ? '{{ route("avicontrol.admin.information.costos_produccion.excel") }}'
+            : '{{ route("avicontrol.admin.information.costos_produccion.pdf") }}';
+        
+        const params = new URLSearchParams();
+        Object.keys(filtros).forEach(key => {
+            if (filtros[key] && filtros[key] !== '') {
+                params.append(key, filtros[key]);
+            }
+        });
+        
+        const urlConFiltros = `${baseUrl}?${params.toString()}`;
+        
+        setTimeout(() => {
+            window.location.href = urlConFiltros;
+            mostrarNotificacion(`${formato.toUpperCase()} con filtros descargado exitosamente`, 'success');
+            
+            setTimeout(() => {
+                btn.html(originalText);
+                btn.prop('disabled', false);
+            }, 2000);
+        }, 500);
+    }
+    
+    function obtenerFiltrosSeleccionados() {
+        return {
+            tipo_periodo: $('#tipoPeriodo').val(),
+            cost_type: $('#tipoFiltro').val(),
+            galpon_id: $('#galponFiltro').val(),
+            ordenamiento: $('#ordenamiento').val(),
+            fecha_inicio: $('#fechaInicio').val(),
+            fecha_fin: $('#fechaFin').val(),
+            costo_minimo: $('#costoMinimo').val(),
+            costo_maximo: $('#costoMaximo').val()
+        };
+    }
+    
+    function validarFiltros(filtros) {
+        if (!filtros.tipo_periodo) {
+            mostrarNotificacion('Por favor selecciona un tipo de período', 'error');
+            return false;
+        }
+        
+        if (filtros.tipo_periodo === 'personalizado') {
+            if (!filtros.fecha_inicio || !filtros.fecha_fin) {
+                mostrarNotificacion('Para rango personalizado debes especificar fecha de inicio y fin', 'error');
+                return false;
+            }
+            
+            if (new Date(filtros.fecha_inicio) > new Date(filtros.fecha_fin)) {
+                mostrarNotificacion('La fecha de inicio debe ser anterior a la fecha de fin', 'error');
+                return false;
+            }
+        }
+        
+        if (filtros.costo_minimo && filtros.costo_maximo) {
+            if (parseFloat(filtros.costo_minimo) > parseFloat(filtros.costo_maximo)) {
+                mostrarNotificacion('El costo mínimo debe ser menor que el costo máximo', 'error');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    function actualizarResumenFiltros() {
+        const filtros = obtenerFiltrosSeleccionados();
+        let resumen = [];
+        
+        // Período
+        if (filtros.tipo_periodo) {
+            const periodos = {
+                'todo': '📊 Todos los datos disponibles',
+                'hoy': '📅 Solo registros de hoy',
+                'semanal': '📅 Registros de esta semana',
+                'mensual': '📅 Registros de este mes',
+                'anual': '📅 Registros de este año',
+                'personalizado': `🎯 Del ${filtros.fecha_inicio || '...'} al ${filtros.fecha_fin || '...'}`
+            };
+            resumen.push(`<strong>Período:</strong> ${periodos[filtros.tipo_periodo]}`);
+        }
+        
+        // Tipo de costo
+        if (filtros.cost_type) {
+            const tipos = {
+                'batch': '📦 Por lote',
+                'monthly': '📅 Mensual',
+                'weekly': '📊 Semanal',
+                'daily': '🗓️ Diario',
+                'feed': '🌾 Alimentación',
+                'medical': '💊 Médico',
+                'maintenance': '🔧 Mantenimiento'
+            };
+            resumen.push(`<strong>Tipo:</strong> ${tipos[filtros.cost_type]}`);
+        } else {
+            resumen.push(`<strong>Tipo:</strong> Todos los tipos de costo`);
+        }
+        
+        // Galpón
+        if (filtros.galpon_id) {
+            const galponTexto = $('#galponFiltro option:selected').text();
+            resumen.push(`<strong>Galpón:</strong> ${galponTexto}`);
+        } else {
+            resumen.push(`<strong>Galpón:</strong> Todos los galpones`);
+        }
+        
+        // Filtros de costo
+        if (filtros.costo_minimo || filtros.costo_maximo) {
+            let costoFiltro = '<strong>Rango de Costo:</strong> ';
+            if (filtros.costo_minimo && filtros.costo_maximo) {
+                costoFiltro += `Entre $${filtros.costo_minimo} y $${filtros.costo_maximo}`;
+            } else if (filtros.costo_minimo) {
+                costoFiltro += `Mínimo $${filtros.costo_minimo}`;
+            } else if (filtros.costo_maximo) {
+                costoFiltro += `Máximo $${filtros.costo_maximo}`;
+            }
+            resumen.push(costoFiltro);
+        }
+        
+        // Ordenamiento
+        if (filtros.ordenamiento) {
+            const ordenTexto = $('#ordenamiento option:selected').text();
+            resumen.push(`<strong>Orden:</strong> ${ordenTexto}`);
+        }
+        
+        const resumenHtml = resumen.length > 0 
+            ? resumen.join('<br>') 
+            : 'Selecciona un período para ver el resumen...';
+        
+        $('#resumenFiltros').html(resumenHtml);
+    }
+    
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        const notificacion = $(`
+            <div class="alert alert-${tipo} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        $('body').append(notificacion);
+        
+        setTimeout(() => {
+            notificacion.fadeOut(() => notificacion.remove());
+        }, 5000);
+    }
+    
+    console.log('=== AVICONTROL COSTOS DE PRODUCCIÓN - INICIALIZADO ===');
 });
 </script>
 @endpush
