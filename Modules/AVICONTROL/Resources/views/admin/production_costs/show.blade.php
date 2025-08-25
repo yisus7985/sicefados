@@ -241,30 +241,7 @@
                     </div>
                     @endif
 
-                    <!-- Análisis de rentabilidad -->
-                    @if($productionCost->profitabilityAnalysis)
-                    <hr>
-                    <h5>Análisis de Rentabilidad Asociado</h5>
-                    <div class="alert alert-success">
-                        <strong>Este costo de producción tiene un análisis de rentabilidad asociado.</strong>
-                        <br>
-                        <a href="{{ route('avicontrol.admin.profitability_analysis.show', $productionCost->profitabilityAnalysis->id) }}" 
-                           class="btn btn-sm btn-success mt-2">
-                            <i class="fas fa-chart-line"></i> Ver Análisis de Rentabilidad
-                        </a>
-                    </div>
-                    @else
-                    <hr>
-                    <h5>Análisis de Rentabilidad</h5>
-                    <div class="alert alert-warning">
-                        <strong>Este costo de producción no tiene un análisis de rentabilidad asociado.</strong>
-                        <br>
-                        <a href="{{ route('avicontrol.admin.profitability_analysis.create') }}?production_cost_id={{ $productionCost->id }}" 
-                           class="btn btn-sm btn-warning mt-2">
-                            <i class="fas fa-plus"></i> Crear Análisis de Rentabilidad
-                        </a>
-                    </div>
-                    @endif
+
                 </div>
             </div>
         </div>

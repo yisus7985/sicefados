@@ -594,11 +594,7 @@
                 <i class="fas fa-bell"></i>
                 <span>Alertas</span>
             </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-clipboard-check"></i>
-                <span>Normativas</span>
-            </a>
-            
+
             <div class="menu-header">Cuenta</div>
             <a href="#" class="menu-item">
                 <i class="fas fa-user-cog"></i>

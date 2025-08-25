@@ -71,7 +71,6 @@
                                     <th>Costo/Unidad</th>
                                     <th>Estado</th>
                                     <th>Creado</th>
-                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -121,17 +120,10 @@
                                             N/A
                                         @endif
                                     </td>
-                                    <td>
-                                        <div class="btn-group" role="group" aria-label="Acciones">
-                                            <a href="{{ route('avicontrol.admin.information.costos_produccion.pdf_show', $cost->id) }}" class="btn btn-outline-danger btn-sm" title="Descargar PDF">
-                                                <i class="fas fa-file-pdf"></i>
-                                            </a>
-                                        </div>
-                                    </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted">
+                                    <td colspan="9" class="text-center text-muted">
                                         <i class="fas fa-info-circle me-1"></i>
                                         No hay costos de producción para mostrar
                                     </td>

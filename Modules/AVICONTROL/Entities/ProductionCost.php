@@ -77,7 +77,11 @@ class ProductionCost extends Model
 
     public function profitabilityAnalysis()
     {
-        return $this->hasOne(ProfitabilityAnalysis::class, 'production_cost_id');
+        // Verificar si la tabla existe antes de intentar la relación
+        if (\Schema::hasTable('avicontrol_profitability_analysis')) {
+            return $this->hasOne(ProfitabilityAnalysis::class, 'production_cost_id');
+        }
+        return null;
     }
 
     // Accessors

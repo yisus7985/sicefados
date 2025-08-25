@@ -179,7 +179,10 @@ class ProductionCostController extends Controller
                 'profitabilityAnalysis'
             ])->findOrFail($id);
             
-            return view('avicontrol::admin.production_costs.show', compact('productionCost'));
+            // Calcular el costo total para usar en la vista
+            $totalCost = $productionCost->total_cost;
+            
+            return view('avicontrol::admin.production_costs.show', compact('productionCost', 'totalCost'));
         } catch (\Exception $e) {
             Log::error('Error showing production cost: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al mostrar el costo de producción: ' . $e->getMessage());
@@ -298,8 +301,10 @@ class ProductionCostController extends Controller
             
             $productionCost = ProductionCost::findOrFail($id);
             
-            // Verificar si tiene análisis de rentabilidad asociados
-            if ($productionCost->profitabilityAnalysis()->exists()) {
+            // Verificar si tiene análisis de rentabilidad asociados (solo si la tabla existe)
+            if (\Schema::hasTable('avicontrol_profitability_analysis') && 
+                $productionCost->profitabilityAnalysis() && 
+                $productionCost->profitabilityAnalysis()->exists()) {
                 return redirect()->back()->with('error', 'No se puede eliminar el costo de producción porque tiene análisis de rentabilidad asociados');
             }
             
