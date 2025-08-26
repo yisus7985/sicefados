@@ -227,8 +227,8 @@ class FoodConsumptionController extends Controller
                 $consumo->revertirInventario();
             }
             
-            // Eliminar completamente el registro usando soft delete
-            $consumo->delete();
+            // Usar forceDelete() para eliminar físicamente el registro
+            $consumo->forceDelete();
             
             DB::commit();
 

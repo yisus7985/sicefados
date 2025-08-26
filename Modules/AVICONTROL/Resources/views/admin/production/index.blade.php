@@ -267,12 +267,7 @@
                                                class="btn btn-sm btn-outline-warning" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary toggle-status" 
-                                                    data-id="{{ $production->id }}" 
-                                                    data-status="{{ $production->estado }}"
-                                                    title="{{ $production->estado === 'activo' ? 'Desactivar' : 'Activar' }}">
-                                                <i class="fas fa-{{ $production->estado === 'activo' ? 'pause' : 'play' }}"></i>
-                                            </button>
+                                           
                                             <button type="button" class="btn btn-sm btn-outline-danger delete-production" 
                                                     data-id="{{ $production->id }}" title="Eliminar">
                                                 <i class="fas fa-trash"></i>

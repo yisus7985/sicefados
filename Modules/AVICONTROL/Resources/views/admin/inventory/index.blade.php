@@ -39,14 +39,14 @@
             <!-- Stats Cards -->
             <div class="row mb-4">
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card border-start border-primary shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            <div class="row g-0 align-items-center">
+                                <div class="col me-2">
+                                    <div class="text-xs fw-bold text-primary text-uppercase mb-1">
                                         Total Productos
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['total_products'] }}</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">{{ $stats['total_products'] }}</div>
                                 </div>
                                 <div class="col-auto">
                                     <i class="fas fa-boxes fa-2x text-gray-300"></i>
@@ -56,14 +56,14 @@
                     </div>
                 </div>
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card border-start border-warning shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            <div class="row g-0 align-items-center">
+                                <div class="col me-2">
+                                    <div class="text-xs fw-bold text-warning text-uppercase mb-1">
                                         Stock Bajo
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['low_stock_products'] }}</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">{{ $stats['low_stock_products'] }}</div>
                                 </div>
                                 <div class="col-auto">
                                     <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
@@ -73,14 +73,14 @@
                     </div>
                 </div>
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-danger shadow h-100 py-2">
+                    <div class="card border-start border-danger shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            <div class="row g-0 align-items-center">
+                                <div class="col me-2">
+                                    <div class="text-xs fw-bold text-danger text-uppercase mb-1">
                                         Por Vencer
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['expiring_products'] }}</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">{{ $stats['expiring_products'] }}</div>
                                 </div>
                                 <div class="col-auto">
                                     <i class="fas fa-clock fa-2x text-gray-300"></i>
@@ -90,14 +90,14 @@
                     </div>
                 </div>
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card border-start border-success shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            <div class="row g-0 align-items-center">
+                                <div class="col me-2">
+                                    <div class="text-xs fw-bold text-success text-uppercase mb-1">
                                         Valor Total
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">${{ number_format($stats['total_value'], 2) }}</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">${{ number_format($stats['total_value'], 2) }}</div>
                                 </div>
                                 <div class="col-auto">
                                     <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -172,7 +172,11 @@
                                 @foreach($products as $product)
                                 <tr>
                                     <td>
-                                        <span class="badge badge-primary">{{ $product->code }}</span>
+                                        @if($product->code)
+                                            <span class="badge bg-primary">{{ $product->code }}</span>
+                                        @else
+                                            <span class="badge bg-secondary">Sin código</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <strong>{{ $product->name }}</strong>
@@ -181,13 +185,20 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge badge-info">{{ $product->category_name }}</span>
+                                        @if($product->category)
+                                            <span class="badge bg-info text-dark">{{ $product->category_name }}</span>
+                                        @else
+                                            <span class="badge bg-secondary">Sin categoría</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <span class="font-weight-bold">{{ $product->current_stock }} {{ $product->unit_measure }}</span>
+                                            <span class="fw-bold">{{ $product->current_stock }} {{ $product->unit_measure }}</span>
                                             @if($product->isLowStock())
-                                                <i class="fas fa-exclamation-triangle text-warning ml-2" title="Stock bajo"></i>
+                                                <i class="fas fa-exclamation-triangle text-warning ms-2" title="Stock bajo"></i>
+                                            @endif
+                                            @if($product->current_stock == 0)
+                                                <span class="badge bg-danger ms-2">Agotado</span>
                                             @endif
                                         </div>
                                     </td>
@@ -195,11 +206,13 @@
                                     <td>${{ number_format($product->unit_price, 2) }}</td>
                                     <td>
                                         @if($product->status === 'active')
-                                            <span class="badge badge-success">Activo</span>
+                                            <span class="badge bg-success">Activo</span>
                                         @elseif($product->status === 'inactive')
-                                            <span class="badge badge-secondary">Inactivo</span>
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        @elseif($product->status === 'expired')
+                                            <span class="badge bg-danger">Vencido</span>
                                         @else
-                                            <span class="badge badge-danger">Vencido</span>
+                                            <span class="badge bg-warning">{{ $product->status ?? 'Sin estado' }}</span>
                                         @endif
                                     </td>
                                     <td>
@@ -214,9 +227,34 @@
                                             </a>
                                             <!-- Botón de movimiento removido temporalmente -->
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                    onclick="deleteProduct({{ $product->id }})" title="Eliminar">
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal{{ $product->id }}" title="Eliminar">
                                                 <i class="fas fa-trash"></i>
                                             </button>
+                                            
+                                            <!-- Delete Modal -->
+                                            <div class="modal fade" id="deleteModal{{ $product->id }}" tabindex="-1" 
+                                                 aria-labelledby="deleteModalLabel{{ $product->id }}" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="deleteModalLabel{{ $product->id }}">Confirmar Eliminación</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            ¿Está seguro de que desea eliminar el producto <strong>{{ $product->name }}</strong>?
+                                                            <p class="text-danger mt-2">Esta acción no se puede deshacer.</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                            <form action="{{ route('avicontrol.admin.inventory.destroy', $product->id) }}" method="POST" id="deleteForm{{ $product->id }}">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -299,29 +337,16 @@
         }
     });
 
-    // Delete product function
-    function deleteProduct(productId) {
-        if (confirm('¿Está seguro de que desea eliminar este producto?')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/avicontrol/admin/inventory/${productId}`;
-            
-            const csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
-            
-            const methodField = document.createElement('input');
-            methodField.type = 'hidden';
-            methodField.name = '_method';
-            methodField.value = 'DELETE';
-            
-            form.appendChild(csrfToken);
-            form.appendChild(methodField);
-            document.body.appendChild(form);
-            form.submit();
-        }
-    }
+    // Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verificar que los modales estén funcionando
+        const deleteButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+        console.log('Found delete buttons:', deleteButtons.length);
+        
+        // Verificar que los formularios de eliminación estén funcionando
+        const deleteForms = document.querySelectorAll('form[id^="deleteForm"]');
+        console.log('Found delete forms:', deleteForms.length);
+    });
 
     // Auto-hide alerts
     setTimeout(function() {

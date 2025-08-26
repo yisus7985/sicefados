@@ -200,11 +200,24 @@ class InventoryController extends Controller
      */
     public function destroy($id)
     {
-        $product = InventoryProduct::findOrFail($id);
-        $product->delete();
+        try {
+            \Log::info('Attempting to delete inventory product with ID: ' . $id);
+            
+            $product = InventoryProduct::findOrFail($id);
+            \Log::info('Product found: ' . $product->name);
+            
+            // Usar forceDelete() para eliminar físicamente el registro
+            $product->forceDelete();
+            \Log::info('Product deleted successfully');
 
-        return redirect()->route('avicontrol.admin.inventory.index')
-            ->with('success', 'Producto eliminado exitosamente.');
+            return redirect()->route('avicontrol.admin.inventory.index')
+                ->with('success', 'Producto eliminado exitosamente.');
+        } catch (\Exception $e) {
+            \Log::error('Error deleting inventory product: ' . $e->getMessage());
+            
+            return redirect()->route('avicontrol.admin.inventory.index')
+                ->with('error', 'Error al eliminar el producto: ' . $e->getMessage());
+        }
     }
 
     /**

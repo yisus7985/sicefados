@@ -180,7 +180,6 @@
                                     <th>Destino</th>
                                     <th>Semana</th>
                                     <th>Estado</th>
-                                    <th width="120">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -266,27 +265,12 @@
                                                 {{ ucfirst($produccion['estado'] ?? 'N/A') }}
                                             </span>
                                         </td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <a href="{{ route('avicontrol.admin.information.galpon.detalle', ['galpon_id' => $produccion['galpon_id'] ?? 0]) }}" 
-                                                   class="btn btn-info btn-sm">
-                                                    <i class="fas fa-eye mr-1"></i>
-                                                    Ver Detalle
-                                                </a>
-                                                <button type="button" class="btn btn-danger btn-sm generar-pdf" 
-                                                        data-produccion-id="{{ $produccion['id'] ?? 0 }}"
-                                                        data-fecha="{{ $produccion['fecha'] ? $produccion['fecha']->format('Y-m-d') : '' }}"
-                                                        data-galpon="{{ $produccion['galpon'] ?? '' }}">
-                                                    <i class="fas fa-file-pdf mr-1"></i>
-                                                    PDF
-                                                </button>
-                                            </div>
-                                        </td>
+
                                     </tr>
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="17" class="text-center text-muted">
+                                        <td colspan="16" class="text-center text-muted">
                                             <i class="fas fa-info-circle me-2"></i>
                                             No hay datos de producción disponibles
                                         </td>

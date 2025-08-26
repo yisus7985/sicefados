@@ -49,7 +49,7 @@ Route::middleware(['web', 'lang'])->group(function () {
         })->name('avicontrol.admin.logout');
 
         // Grupo de rutas administrativas
-        Route::prefix('admin')->name('avicontrol.admin.')->group(function () {
+        Route::prefix('admin')->name('avicontrol.admin.')->middleware(['auth'])->group(function () {
 
             // Rutas de galpones (poultry facilities)
             Route::get('poultry_facilities', [PoultryFacilityController::class, 'index'])->name('poultry_facilities.index');

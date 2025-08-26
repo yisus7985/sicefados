@@ -485,7 +485,8 @@ class ProductionController extends Controller
     {
         try {
             $production = Production::findOrFail($id);
-            $production->delete();
+            // Usar forceDelete() para eliminar físicamente el registro
+            $production->forceDelete();
 
             return redirect()->route('avicontrol.admin.production.index')
                 ->with('success', 'Registro de producción eliminado exitosamente');
@@ -545,7 +546,8 @@ class ProductionController extends Controller
                     $message = 'Registros desactivados exitosamente';
                     break;
                 case 'delete':
-                    Production::whereIn('id', $ids)->delete();
+                    // Usar forceDelete() para eliminar físicamente los registros
+                    Production::whereIn('id', $ids)->forceDelete();
                     $message = 'Registros eliminados exitosamente';
                     break;
             }

@@ -253,7 +253,8 @@ class PoultryFacilityController extends Controller
             // }
             
             $poultryFacility = PoultryFacility::findOrFail($id);
-            $poultryFacility->delete();
+            // Usar forceDelete() para eliminar físicamente el registro
+            $poultryFacility->forceDelete();
             Log::info('Deleted poultry facility with ID: ' . $id);
 
             return redirect()->route('avicontrol.admin.poultry_facilities.index')

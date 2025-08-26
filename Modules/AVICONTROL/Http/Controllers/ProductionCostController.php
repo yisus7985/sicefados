@@ -308,7 +308,8 @@ class ProductionCostController extends Controller
                 return redirect()->back()->with('error', 'No se puede eliminar el costo de producción porque tiene análisis de rentabilidad asociados');
             }
             
-            $productionCost->delete();
+            // Usar forceDelete() para eliminar físicamente el registro
+            $productionCost->forceDelete();
             
             Log::info('Production cost deleted successfully', ['id' => $id]);
             return redirect()->route('avicontrol.admin.production_costs.index')
