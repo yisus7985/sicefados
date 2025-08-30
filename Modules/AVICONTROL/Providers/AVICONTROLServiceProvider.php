@@ -28,6 +28,7 @@ class AVICONTROLServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
+        $this->registerAssets();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
         
         // Register the bypass permission middleware
@@ -117,5 +118,17 @@ class AVICONTROLServiceProvider extends ServiceProvider
             }
         }
         return $paths;
+    }
+
+    /**
+     * Register assets (CSS, JS, images, PDFs, etc.)
+     *
+     * @return void
+     */
+    protected function registerAssets()
+    {
+        $this->publishes([
+            module_path($this->moduleName, 'public') => public_path('modules/' . $this->moduleNameLower),
+        ], ['assets', $this->moduleNameLower . '-module-assets']);
     }
 }

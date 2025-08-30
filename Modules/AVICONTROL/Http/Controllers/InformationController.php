@@ -3962,4 +3962,12 @@ class InformationController extends Controller
             return 0;
         }
     }
+
+    /**
+     * Muestra la vista del manual de usuario
+     */
+    public function manualUsuario()
+    {
+        return view('avicontrol::admin.information.manual-usuario');
+    }
 }

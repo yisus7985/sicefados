@@ -91,7 +91,9 @@ Route::middleware(['web', 'lang'])->group(function () {
                 Route::get('/costos-produccion/exportar-pdf', [InformationController::class, 'exportarCostosProduccionPdf'])->name('costos_produccion.pdf');
                 Route::get('/costos-produccion/exportar-excel', [InformationController::class, 'exportarCostosProduccionExcel'])->name('costos_produccion.excel');
                 Route::get('/costos-produccion/{id}/exportar-pdf', [InformationController::class, 'exportarCostoProduccionPdf'])->name('costos_produccion.pdf_show');
-                Route::get('/{id}', [InformationController::class, 'show'])->name('show');
+                
+                // Ruta para el manual de usuario
+                Route::get('/manual-usuario', [InformationController::class, 'manualUsuario'])->name('manual-usuario');
                 
                 // Ruta para detalle del galpón
                 Route::get('/galpon/{galpon_id}/detalle', [InformationController::class, 'detalleGalpon'])->name('galpon.detalle');
@@ -99,6 +101,8 @@ Route::middleware(['web', 'lang'])->group(function () {
                 // Ruta de prueba
                 Route::get('/test-detalle', [InformationController::class, 'testDetalleGalpon'])->name('test.detalle');
                 Route::get('/test-produccion', [InformationController::class, 'testProduccion'])->name('test.produccion');
+                
+                Route::get('/{id}', [InformationController::class, 'show'])->name('show');
                 
                 // Endpoints AJAX para datos filtrados
                 Route::post('/produccion/filtrar', [InformationController::class, 'filtrarProduccion'])->name('produccion.filtrar');

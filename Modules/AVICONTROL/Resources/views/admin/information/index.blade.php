@@ -121,7 +121,7 @@
                         Guía completa para el uso del sistema AVICONTROL. Incluye instrucciones 
                         detalladas de todos los módulos y funcionalidades disponibles.
                     </p>
-                    <a href="#" class="btn btn-warning w-100" onclick="alert('Manual de usuario en desarrollo')">
+                    <a href="{{ route('avicontrol.admin.information.manual-usuario') }}" class="btn btn-warning w-100">
                         <i class="fas fa-arrow-right me-2"></i>
                         Ver Manual de Usuario
                     </a>
